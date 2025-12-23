@@ -248,6 +248,8 @@ class FFmpegService:
         start_time_seconds: float,
         duration_seconds: float,
         offset_ms: float,
+        mute_main_audio: bool = True,
+        mute_secondary_audio: bool = False,
     ) -> PreviewResponse:
         """Generate a preview clip with combined audio.
 
@@ -257,6 +259,8 @@ class FFmpegService:
             start_time_seconds: Start time in the main video timeline.
             duration_seconds: Duration of the preview clip.
             offset_ms: Audio offset in milliseconds.
+            mute_main_audio: If True, mute the original video's audio.
+            mute_secondary_audio: If True, mute the secondary audio.
 
         Returns:
             PreviewResponse with path to the preview file.
@@ -280,10 +284,7 @@ class FFmpegService:
         # So for the same video position, we need audio from an earlier point
         audio_start_time = start_time_seconds - offset_seconds
 
-        # Build FFmpeg command
-        # We create a preview with:
-        # - Video from the main file (with original audio muted)
-        # - Audio from the secondary file (mixed or replaced)
+        # Build FFmpeg command based on mute settings
         cmd = [
             "ffmpeg",
             "-y",  # Overwrite output
@@ -293,15 +294,43 @@ class FFmpegService:
             "-i", str(audio),
             "-t", str(duration_seconds),  # Duration
             "-map", "0:v:0",  # Video from first input
-            "-map", "1:a:0",  # Audio from second input
+        ]
+
+        # Handle audio mapping based on mute settings
+        if mute_main_audio and mute_secondary_audio:
+            # Both muted - no audio
+            cmd.extend(["-an"])
+        elif mute_main_audio and not mute_secondary_audio:
+            # Only secondary audio (current default behavior)
+            cmd.extend(["-map", "1:a:0"])
+        elif not mute_main_audio and mute_secondary_audio:
+            # Only main audio
+            cmd.extend(["-map", "0:a:0"])
+        else:
+            # Both audios - mix them together
+            cmd.extend([
+                "-filter_complex", "[0:a:0][1:a:0]amix=inputs=2:duration=first[aout]",
+                "-map", "[aout]",
+            ])
+
+        # Video encoding settings
+        cmd.extend([
             "-c:v", "libx264",  # Re-encode video (needed for accurate seeking)
             "-preset", "ultrafast",  # Fast encoding for preview
             "-crf", "28",  # Lower quality for smaller file
-            "-c:a", "aac",  # Encode audio
-            "-b:a", "128k",
+        ])
+
+        # Audio encoding (if any audio is present)
+        if not (mute_main_audio and mute_secondary_audio):
+            cmd.extend([
+                "-c:a", "aac",
+                "-b:a", "128k",
+            ])
+
+        cmd.extend([
             "-movflags", "+faststart",  # Enable streaming
             str(output_path),
-        ]
+        ])
 
         try:
             subprocess.run(cmd, capture_output=True, text=True, check=True)

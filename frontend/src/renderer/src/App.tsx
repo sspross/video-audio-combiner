@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { Loader2, Download, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react'
-import { FileSelector } from './components/FileSelector'
-import { TrackPicker } from './components/TrackPicker'
-import { WaveformViewer } from './components/WaveformViewer'
-import { AlignmentControls } from './components/AlignmentControls'
-import { VideoPreview } from './components/VideoPreview'
+import { Loader2, RotateCcw, AlertCircle } from 'lucide-react'
+import { SourcePanel } from './components/SourcePanel'
+import { PreviewPanel } from './components/PreviewPanel'
+import { AlignmentEditor } from './components/AlignmentEditor'
 import { useProjectStore } from './stores/projectStore'
 import { useBackendApi } from './hooks/useBackendApi'
 import styles from './App.module.css'
@@ -22,7 +20,10 @@ function App() {
   const [previewPath, setPreviewPath] = useState<string | null>(null)
   const [previewVersion, setPreviewVersion] = useState(0)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
-  const lastPreviewRequest = useRef<{ startTime: number; duration: number } | null>(null)
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false)
+
+  // Track if we've already analyzed the current file combination
+  const analyzedFilesRef = useRef<string | null>(null)
 
   // Check backend readiness
   useEffect(() => {
@@ -35,6 +36,8 @@ function App() {
     if (!api.isReady) return
     store.setLoading(true)
     store.setError(null)
+    // Reset analyzed files when main file changes
+    analyzedFilesRef.current = null
     try {
       const tracks = await api.getAudioTracks(filePath)
       store.setMainFile(filePath, tracks.tracks)
@@ -49,6 +52,8 @@ function App() {
     if (!api.isReady) return
     store.setLoading(true)
     store.setError(null)
+    // Reset analyzed files when secondary file changes
+    analyzedFilesRef.current = null
     try {
       const tracks = await api.getAudioTracks(filePath)
       store.setSecondaryFile(filePath, tracks.tracks)
@@ -73,49 +78,60 @@ function App() {
     }
   }, [loadSecondaryFile])
 
-  const handleAnalyze = useCallback(async () => {
-    if (!store.mainFilePath || !store.secondaryFilePath || !api.isReady) return
+  // Auto-analyze when both files are selected
+  useEffect(() => {
+    const runAnalysis = async () => {
+      if (!store.mainFilePath || !store.secondaryFilePath || !api.isReady) return
+      if (store.isLoading) return
 
-    store.setLoading(true)
-    store.setError(null)
-    store.setCurrentStep('analyzing')
-    setAnalysisStep('extracting')
+      // Create a key for the current file combination
+      const filesKey = `${store.mainFilePath}:${store.selectedMainTrackIndex}:${store.secondaryFilePath}:${store.selectedSecondaryTrackIndex}`
 
-    try {
-      // Extract audio from both files
-      const [mainExtract, secondaryExtract] = await Promise.all([
-        api.extractAudio(store.mainFilePath, store.selectedMainTrackIndex),
-        api.extractAudio(store.secondaryFilePath, store.selectedSecondaryTrackIndex)
-      ])
+      // Skip if we've already analyzed this combination
+      if (analyzedFilesRef.current === filesKey) return
+      analyzedFilesRef.current = filesKey
 
-      store.setMainWavPath(mainExtract.wav_path)
-      store.setSecondaryWavPath(secondaryExtract.wav_path)
+      store.setLoading(true)
+      store.setError(null)
+      setAnalysisStep('extracting')
 
-      // Generate waveforms
-      setAnalysisStep('waveforms')
-      const [mainWaveform, secondaryWaveform] = await Promise.all([
-        api.generateWaveform(mainExtract.wav_path),
-        api.generateWaveform(secondaryExtract.wav_path)
-      ])
+      try {
+        // Extract audio from both files
+        const [mainExtract, secondaryExtract] = await Promise.all([
+          api.extractAudio(store.mainFilePath, store.selectedMainTrackIndex),
+          api.extractAudio(store.secondaryFilePath, store.selectedSecondaryTrackIndex)
+        ])
 
-      store.setMainPeaks(mainWaveform.peaks)
-      store.setSecondaryPeaks(secondaryWaveform.peaks)
+        store.setMainWavPath(mainExtract.wav_path)
+        store.setSecondaryWavPath(secondaryExtract.wav_path)
 
-      // Auto-detect alignment
-      setAnalysisStep('aligning')
-      const alignment = await api.detectAlignment(mainExtract.wav_path, secondaryExtract.wav_path)
-      store.setOffset(alignment.offset_ms)
-      store.setConfidence(alignment.confidence)
+        // Generate waveforms
+        setAnalysisStep('waveforms')
+        const [mainWaveform, secondaryWaveform] = await Promise.all([
+          api.generateWaveform(mainExtract.wav_path),
+          api.generateWaveform(secondaryExtract.wav_path)
+        ])
 
-      setAnalysisStep('done')
-      store.setCurrentStep('align')
-    } catch (err) {
-      store.setError(err instanceof Error ? err.message : 'Analysis failed')
-      store.setCurrentStep('select-files')
-      setAnalysisStep('idle')
-    } finally {
-      store.setLoading(false)
+        store.setMainPeaks(mainWaveform.peaks)
+        store.setSecondaryPeaks(secondaryWaveform.peaks)
+
+        // Auto-detect alignment
+        setAnalysisStep('aligning')
+        const alignment = await api.detectAlignment(mainExtract.wav_path, secondaryExtract.wav_path)
+        store.setOffset(alignment.offset_ms)
+        store.setConfidence(alignment.confidence)
+
+        setAnalysisStep('done')
+      } catch (err) {
+        store.setError(err instanceof Error ? err.message : 'Analysis failed')
+        analyzedFilesRef.current = null // Allow retry
+        setAnalysisStep('idle')
+      } finally {
+        store.setLoading(false)
+      }
     }
+
+    runAnalysis()
   }, [
     store.mainFilePath,
     store.secondaryFilePath,
@@ -127,7 +143,7 @@ function App() {
   const handleAutoDetect = useCallback(async () => {
     if (!store.mainWavPath || !store.secondaryWavPath || !api.isReady) return
 
-    store.setLoading(true)
+    setIsAutoDetecting(true)
     try {
       const alignment = await api.detectAlignment(store.mainWavPath, store.secondaryWavPath)
       store.setOffset(alignment.offset_ms)
@@ -135,41 +151,33 @@ function App() {
     } catch (err) {
       store.setError(err instanceof Error ? err.message : 'Auto-detect failed')
     } finally {
-      store.setLoading(false)
+      setIsAutoDetecting(false)
     }
   }, [store.mainWavPath, store.secondaryWavPath, api.isReady])
 
-  const handlePreviewRequest = useCallback(
-    async (startTimeSeconds: number, durationSeconds: number) => {
-      if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
+  const handlePreviewRequest = useCallback(async () => {
+    if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
 
-      setIsGeneratingPreview(true)
-      lastPreviewRequest.current = { startTime: startTimeSeconds, duration: durationSeconds }
+    setIsGeneratingPreview(true)
 
-      try {
-        const result = await api.generatePreview(
-          store.mainFilePath,
-          store.secondaryWavPath,
-          startTimeSeconds,
-          durationSeconds,
-          store.offsetMs
-        )
-        setPreviewPath(result.preview_path)
-        setPreviewVersion((v) => v + 1)
-      } catch (err) {
-        store.setError(err instanceof Error ? err.message : 'Preview generation failed')
-      } finally {
-        setIsGeneratingPreview(false)
-      }
-    },
-    [store.mainFilePath, store.secondaryWavPath, store.offsetMs, api.isReady]
-  )
-
-  const handleRegeneratePreview = useCallback(() => {
-    if (lastPreviewRequest.current) {
-      handlePreviewRequest(lastPreviewRequest.current.startTime, lastPreviewRequest.current.duration)
+    try {
+      const result = await api.generatePreview(
+        store.mainFilePath,
+        store.secondaryWavPath,
+        store.cursorPositionMs / 1000,
+        store.previewDurationSeconds,
+        store.offsetMs,
+        store.isMainAudioMuted,
+        store.isSecondaryAudioMuted
+      )
+      setPreviewPath(result.preview_path)
+      setPreviewVersion((v) => v + 1)
+    } catch (err) {
+      store.setError(err instanceof Error ? err.message : 'Preview generation failed')
+    } finally {
+      setIsGeneratingPreview(false)
     }
-  }, [handlePreviewRequest])
+  }, [store.mainFilePath, store.secondaryWavPath, store.cursorPositionMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
 
   const handleExport = useCallback(async () => {
     if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
@@ -194,7 +202,7 @@ function App() {
         store.secondaryWavPath,
         store.offsetMs,
         outputPath,
-        'ger', // Default to German since that's the use case
+        'ger',
         'German Dub'
       )
 
@@ -218,12 +226,10 @@ function App() {
     setPreviewPath(null)
     setPreviewVersion(0)
     setIsGeneratingPreview(false)
-    lastPreviewRequest.current = null
+    analyzedFilesRef.current = null
   }, [])
 
-  const canAnalyze = store.mainFilePath && store.secondaryFilePath && !store.isLoading
-  const showWaveforms = store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0
-  const canExport = showWaveforms && !store.isLoading
+  const isAnalyzing = analysisStep !== 'idle' && analysisStep !== 'done' && store.isLoading
 
   const getAnalysisStepText = () => {
     switch (analysisStep) {
@@ -266,7 +272,7 @@ function App() {
   return (
     <div className={styles.app}>
       {/* Loading Overlay */}
-      {store.isLoading && analysisStep !== 'idle' && (
+      {isAnalyzing && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingCard}>
             <Loader2 className={styles.spinner} size={48} />
@@ -282,153 +288,57 @@ function App() {
         </div>
       )}
 
+      {/* Header */}
       <header className={styles.header}>
         <h1 className={styles.title}>Video Audio Combiner</h1>
         <button className="secondary" onClick={handleReset} disabled={store.isLoading}>
-          <RotateCcw size={16} style={{ marginRight: 8 }} />
+          <RotateCcw size={14} style={{ marginRight: 6 }} />
           Reset
         </button>
       </header>
 
-      <main className={styles.main}>
-        {/* File Selection Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>1. Select Files</h2>
-          <div className={`card ${styles.fileGrid}`}>
-            <div className={styles.fileColumn}>
-              <FileSelector
-                label="Main Video (Original)"
-                filePath={store.mainFilePath}
-                onSelect={handleSelectMainFile}
-                onFileDrop={loadMainFile}
-                onClear={() => store.setMainFile('', [])}
-                disabled={store.isLoading}
-              />
-              {store.mainTracks.length > 0 && (
-                <TrackPicker
-                  label="Reference Audio Track"
-                  tracks={store.mainTracks}
-                  selectedIndex={store.selectedMainTrackIndex}
-                  onSelect={store.setSelectedMainTrack}
-                  disabled={store.isLoading}
-                />
-              )}
-            </div>
-            <div className={styles.fileColumn}>
-              <FileSelector
-                label="Secondary Video (Audio Source)"
-                filePath={store.secondaryFilePath}
-                onSelect={handleSelectSecondaryFile}
-                onFileDrop={loadSecondaryFile}
-                onClear={() => store.setSecondaryFile('', [])}
-                disabled={store.isLoading}
-              />
-              {store.secondaryTracks.length > 0 && (
-                <TrackPicker
-                  label="Audio Track to Transfer"
-                  tracks={store.secondaryTracks}
-                  selectedIndex={store.selectedSecondaryTrackIndex}
-                  onSelect={store.setSelectedSecondaryTrack}
-                  disabled={store.isLoading}
-                />
-              )}
-            </div>
-          </div>
-          {canAnalyze && !showWaveforms && (
-            <button className="primary" onClick={handleAnalyze} style={{ marginTop: 16 }}>
-              Analyze & Detect Alignment
-            </button>
-          )}
-        </section>
+      {/* Left Panel - Source Files */}
+      <div className={styles.sourcePanel}>
+        <SourcePanel
+          onSelectMainFile={handleSelectMainFile}
+          onSelectSecondaryFile={handleSelectSecondaryFile}
+          onLoadMainFile={loadMainFile}
+          onLoadSecondaryFile={loadSecondaryFile}
+          onExport={handleExport}
+          isAnalyzing={isAnalyzing}
+          exportStatus={exportStatus}
+          exportError={exportError}
+          onResetExport={() => setExportStatus('idle')}
+        />
+      </div>
 
-        {/* Waveform Section */}
-        {showWaveforms && (
-          <>
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>2. Adjust Alignment</h2>
-              <AlignmentControls
-                offsetMs={store.offsetMs}
-                confidence={store.confidence}
-                onOffsetChange={store.setOffset}
-                onAutoDetect={handleAutoDetect}
-                isLoading={store.isLoading}
-              />
-            </section>
+      {/* Right Panel - Preview */}
+      <div className={styles.previewPanel}>
+        <PreviewPanel
+          previewPath={previewPath}
+          previewVersion={previewVersion}
+          isGeneratingPreview={isGeneratingPreview}
+          onPreviewRequest={handlePreviewRequest}
+          onPreviewEnded={() => setPreviewPath(null)}
+        />
+      </div>
 
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>3. Verify Alignment</h2>
-              <WaveformViewer
-                mainPeaks={store.mainPeaks}
-                secondaryPeaks={store.secondaryPeaks}
-                mainDuration={store.mainTracks[store.selectedMainTrackIndex]?.duration_seconds || 0}
-                secondaryDuration={
-                  store.secondaryTracks[store.selectedSecondaryTrackIndex]?.duration_seconds || 0
-                }
-                offsetMs={store.offsetMs}
-                onPreviewRequest={handlePreviewRequest}
-                isGeneratingPreview={isGeneratingPreview}
-              />
-              {(previewPath || isGeneratingPreview) && (
-                <div style={{ marginTop: 16 }}>
-                  <VideoPreview
-                    previewPath={previewPath}
-                    previewVersion={previewVersion}
-                    onClose={() => setPreviewPath(null)}
-                    onRegenerate={handleRegeneratePreview}
-                    isLoading={isGeneratingPreview}
-                  />
-                </div>
-              )}
-            </section>
+      {/* Bottom Panel - Timeline */}
+      <div className={styles.timeline}>
+        <AlignmentEditor
+          onAutoDetect={handleAutoDetect}
+          isAutoDetecting={isAutoDetecting}
+        />
+      </div>
 
-            {/* Export Section */}
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>4. Export</h2>
-              <div className={`card ${styles.exportSection} ${styles.exportContent}`}>
-                {exportStatus === 'idle' && (
-                  <button className="primary" onClick={handleExport} disabled={!canExport}>
-                    <Download size={16} style={{ marginRight: 8 }} />
-                    Export Merged Video
-                  </button>
-                )}
-                {exportStatus === 'exporting' && (
-                  <div className={styles.exportStatus}>
-                    <Loader2 className={styles.spinner} size={24} />
-                    <span>Merging audio track...</span>
-                  </div>
-                )}
-                {exportStatus === 'success' && (
-                  <div className={styles.exportStatus}>
-                    <CheckCircle size={24} color="var(--success)" />
-                    <span>Export completed successfully!</span>
-                    <button className="secondary" onClick={() => setExportStatus('idle')}>
-                      Export Another
-                    </button>
-                  </div>
-                )}
-                {exportStatus === 'error' && (
-                  <div className={styles.exportStatus}>
-                    <AlertCircle size={24} color="var(--accent)" />
-                    <span>{exportError || 'Export failed'}</span>
-                    <button className="secondary" onClick={() => setExportStatus('idle')}>
-                      Try Again
-                    </button>
-                  </div>
-                )}
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* Error Display */}
-        {store.error && (
-          <div className={styles.errorBanner}>
-            <AlertCircle size={20} />
-            <span>{store.error}</span>
-            <button onClick={() => store.setError(null)}>Dismiss</button>
-          </div>
-        )}
-      </main>
+      {/* Error Display */}
+      {store.error && (
+        <div className={styles.errorBanner}>
+          <AlertCircle size={20} />
+          <span>{store.error}</span>
+          <button onClick={() => store.setError(null)}>Dismiss</button>
+        </div>
+      )}
     </div>
   )
 }

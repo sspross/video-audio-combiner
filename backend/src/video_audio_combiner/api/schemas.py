@@ -99,6 +99,8 @@ class PreviewRequest(BaseModel):
     start_time_seconds: float
     duration_seconds: float = 10.0
     offset_ms: float
+    mute_main_audio: bool = True
+    mute_secondary_audio: bool = False
 
 
 class PreviewResponse(BaseModel):

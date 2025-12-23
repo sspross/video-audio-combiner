@@ -107,6 +107,8 @@ async def generate_preview(request: PreviewRequest) -> PreviewResponse:
             start_time_seconds=request.start_time_seconds,
             duration_seconds=request.duration_seconds,
             offset_ms=request.offset_ms,
+            mute_main_audio=request.mute_main_audio,
+            mute_secondary_audio=request.mute_secondary_audio,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

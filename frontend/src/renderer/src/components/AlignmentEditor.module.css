@@ -1,0 +1,195 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.toolbarSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offsetDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.offsetValue {
+  background-color: var(--bg-tertiary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  color: var(--accent);
+  min-width: 70px;
+  text-align: center;
+}
+
+.autoDetectButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.autoDetectButton:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.autoDetectButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.zoomControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoomLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.zoomSlider {
+  width: 100px;
+  height: 4px;
+  appearance: none;
+  background-color: var(--bg-tertiary);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.zoomSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.zoomValue {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 32px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.instructions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.instruction {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.kbd {
+  display: inline-block;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 10px;
+}
+
+.waveformSection {
+  flex: 1;
+  position: relative;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.waveformScroll {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+}
+
+.waveformContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.waveformTrackWrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Scrollbar styling */
+.waveformScroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.waveformScroll::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.waveformScroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.waveformScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

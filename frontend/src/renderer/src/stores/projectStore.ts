@@ -16,6 +16,13 @@ interface ProjectActions {
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   reset: () => void
+  // Alignment editor actions
+  setCursorPosition: (ms: number) => void
+  setMainAudioMuted: (muted: boolean) => void
+  setSecondaryAudioMuted: (muted: boolean) => void
+  toggleMainAudioMute: () => void
+  toggleSecondaryAudioMute: () => void
+  setPreviewDuration: (seconds: number) => void
 }
 
 const initialState: ProjectState = {
@@ -33,7 +40,12 @@ const initialState: ProjectState = {
   confidence: 0,
   currentStep: 'select-files',
   isLoading: false,
-  error: null
+  error: null,
+  // Alignment editor state
+  cursorPositionMs: 0,
+  isMainAudioMuted: true,
+  isSecondaryAudioMuted: false,
+  previewDurationSeconds: 15
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
@@ -64,5 +76,13 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   setCurrentStep: (step) => set({ currentStep: step }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
-  reset: () => set(initialState)
+  reset: () => set(initialState),
+  // Alignment editor actions
+  setCursorPosition: (ms) => set({ cursorPositionMs: ms }),
+  setMainAudioMuted: (muted) => set({ isMainAudioMuted: muted }),
+  setSecondaryAudioMuted: (muted) => set({ isSecondaryAudioMuted: muted }),
+  toggleMainAudioMute: () => set((state) => ({ isMainAudioMuted: !state.isMainAudioMuted })),
+  toggleSecondaryAudioMute: () =>
+    set((state) => ({ isSecondaryAudioMuted: !state.isSecondaryAudioMuted })),
+  setPreviewDuration: (seconds) => set({ previewDurationSeconds: seconds })
 }))

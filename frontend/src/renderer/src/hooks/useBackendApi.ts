@@ -123,7 +123,9 @@ export function useBackendApi() {
       audioPath: string,
       startTimeSeconds: number,
       durationSeconds: number,
-      offsetMs: number
+      offsetMs: number,
+      muteMainAudio: boolean = true,
+      muteSecondaryAudio: boolean = false
     ): Promise<PreviewResponse> => {
       if (!apiClient) throw new Error('Backend not ready')
       const response = await apiClient.post('/preview', {
@@ -131,7 +133,9 @@ export function useBackendApi() {
         audio_path: audioPath,
         start_time_seconds: startTimeSeconds,
         duration_seconds: durationSeconds,
-        offset_ms: offsetMs
+        offset_ms: offsetMs,
+        mute_main_audio: muteMainAudio,
+        mute_secondary_audio: muteSecondaryAudio
       })
       return response.data
     },

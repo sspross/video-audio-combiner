@@ -64,4 +64,9 @@ export interface ProjectState {
   currentStep: WorkflowStep
   isLoading: boolean
   error: string | null
+  // Alignment editor state
+  cursorPositionMs: number
+  isMainAudioMuted: boolean
+  isSecondaryAudioMuted: boolean
+  previewDurationSeconds: number
 }
