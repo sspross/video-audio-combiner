@@ -1,0 +1,276 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timeDisplay {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.timeDisplay strong {
+  color: var(--text-primary);
+}
+
+.zoomControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoomLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.zoomSlider {
+  width: 100px;
+  height: 4px;
+  appearance: none;
+  background-color: var(--bg-tertiary);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.zoomSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.zoomValue {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 32px;
+}
+
+/* Labels row */
+.labels {
+  display: flex;
+  gap: 24px;
+}
+
+.waveformLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.offsetBadge {
+  background-color: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+/* Waveform container with position marker */
+.waveformContainer {
+  position: relative;
+  background-color: var(--bg-primary);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Preview range indicator - draggable, positioned on timeline */
+.previewRange {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* left and width set dynamically via inline style */
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.previewRangeBar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(234, 179, 8, 0.15);
+  border-left: 2px solid rgba(234, 179, 8, 0.6);
+  border-right: 2px solid rgba(234, 179, 8, 0.6);
+  border-radius: 4px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: grab;
+}
+
+.previewRangeBar:hover {
+  background: rgba(234, 179, 8, 0.25);
+  border-color: rgba(234, 179, 8, 0.8);
+}
+
+.previewRange.dragging .previewRangeBar {
+  background: rgba(234, 179, 8, 0.3);
+  border-color: #eab308;
+  cursor: grabbing;
+}
+
+.previewRangeLabel {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #eab308;
+  color: #000;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 3;
+}
+
+.resizeHandle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 24px;
+  background: #eab308;
+  border-radius: 2px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.resizeHandle:hover::after {
+  opacity: 1;
+}
+
+/* Scrollable waveform area */
+.waveformScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+}
+
+.waveformContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 100%;
+  cursor: crosshair;
+}
+
+.waveformTrack {
+  display: flex;
+  align-items: center;
+  height: 80px;
+}
+
+.canvas {
+  display: block;
+  height: 80px;
+}
+
+/* Legend styles */
+.legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legendItem strong {
+  color: var(--text-primary);
+}
+
+.legendIcon {
+  font-size: 14px;
+}
+
+/* Scrollbar styling */
+.waveformScroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.waveformScroll::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.waveformScroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.waveformScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Preview button */
+.previewButton {
+  background: #eab308;
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.previewButton:hover:not(:disabled) {
+  background: #ca9a06;
+}
+
+.previewButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
