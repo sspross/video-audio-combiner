@@ -48,6 +48,8 @@ export type WorkflowStep =
   | 'preview'
   | 'export'
 
+export type AnalysisStep = 'idle' | 'pending' | 'extracting' | 'waveform'
+
 export interface ProjectState {
   mainFilePath: string | null
   secondaryFilePath: string | null
@@ -59,6 +61,8 @@ export interface ProjectState {
   secondaryWavPath: string | null
   mainPeaks: number[]
   secondaryPeaks: number[]
+  mainAnalysisStep: AnalysisStep
+  secondaryAnalysisStep: AnalysisStep
   offsetMs: number
   confidence: number
   currentStep: WorkflowStep

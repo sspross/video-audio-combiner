@@ -3,35 +3,9 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background-color: #eab308;
+  background-color: var(--info);
   z-index: 20;
   pointer-events: none;
-}
-
-.cursor::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid #eab308;
-}
-
-.cursor::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 8px solid #eab308;
 }
 
 .timeLabel {
@@ -39,11 +13,12 @@
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: #eab308;
-  color: #000;
+  background: var(--warning);
+  color: var(--bg-deep);
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 3px;
   white-space: nowrap;
-  font-family: monospace;
+  font-family: var(--font-mono);
+  font-weight: 500;
 }

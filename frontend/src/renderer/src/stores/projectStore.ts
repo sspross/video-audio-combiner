@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AudioTrack, ProjectState, WorkflowStep } from '../types'
+import type { AnalysisStep, AudioTrack, ProjectState, WorkflowStep } from '../types'
 
 interface ProjectActions {
   setMainFile: (path: string, tracks: AudioTrack[]) => void
@@ -10,6 +10,8 @@ interface ProjectActions {
   setSecondaryWavPath: (path: string) => void
   setMainPeaks: (peaks: number[]) => void
   setSecondaryPeaks: (peaks: number[]) => void
+  setMainAnalysisStep: (step: AnalysisStep) => void
+  setSecondaryAnalysisStep: (step: AnalysisStep) => void
   setOffset: (offsetMs: number) => void
   setConfidence: (confidence: number) => void
   setCurrentStep: (step: WorkflowStep) => void
@@ -36,6 +38,8 @@ const initialState: ProjectState = {
   secondaryWavPath: null,
   mainPeaks: [],
   secondaryPeaks: [],
+  mainAnalysisStep: 'idle',
+  secondaryAnalysisStep: 'idle',
   offsetMs: 0,
   confidence: 0,
   currentStep: 'select-files',
@@ -53,16 +57,22 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
 
   setMainFile: (path, tracks) =>
     set({
-      mainFilePath: path,
+      mainFilePath: path || null,
       mainTracks: tracks,
-      selectedMainTrackIndex: 0
+      selectedMainTrackIndex: 0,
+      mainWavPath: null,
+      mainPeaks: [],
+      mainAnalysisStep: 'idle'
     }),
 
   setSecondaryFile: (path, tracks) =>
     set({
-      secondaryFilePath: path,
+      secondaryFilePath: path || null,
       secondaryTracks: tracks,
-      selectedSecondaryTrackIndex: 0
+      selectedSecondaryTrackIndex: 0,
+      secondaryWavPath: null,
+      secondaryPeaks: [],
+      secondaryAnalysisStep: 'idle'
     }),
 
   setSelectedMainTrack: (index) => set({ selectedMainTrackIndex: index }),
@@ -71,6 +81,8 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   setSecondaryWavPath: (path) => set({ secondaryWavPath: path }),
   setMainPeaks: (peaks) => set({ mainPeaks: peaks }),
   setSecondaryPeaks: (peaks) => set({ secondaryPeaks: peaks }),
+  setMainAnalysisStep: (step) => set({ mainAnalysisStep: step }),
+  setSecondaryAnalysisStep: (step) => set({ secondaryAnalysisStep: step }),
   setOffset: (offsetMs) => set({ offsetMs }),
   setConfidence: (confidence) => set({ confidence }),
   setCurrentStep: (step) => set({ currentStep: step }),

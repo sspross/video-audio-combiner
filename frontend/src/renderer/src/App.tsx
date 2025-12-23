@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { Loader2, RotateCcw, AlertCircle } from 'lucide-react'
-import { SourcePanel } from './components/SourcePanel'
+import { Loader2, RotateCcw, AlertCircle, Download, CheckCircle } from 'lucide-react'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
 import { useProjectStore } from './stores/projectStore'
 import { useBackendApi } from './hooks/useBackendApi'
 import styles from './App.module.css'
-
-type AnalysisStep = 'idle' | 'extracting' | 'waveforms' | 'aligning' | 'done'
 
 function App() {
   const store = useProjectStore()
@@ -16,14 +13,14 @@ function App() {
     'idle'
   )
   const [exportError, setExportError] = useState<string | null>(null)
-  const [analysisStep, setAnalysisStep] = useState<AnalysisStep>('idle')
   const [previewPath, setPreviewPath] = useState<string | null>(null)
   const [previewVersion, setPreviewVersion] = useState(0)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
   const [isAutoDetecting, setIsAutoDetecting] = useState(false)
 
-  // Track if we've already analyzed the current file combination
-  const analyzedFilesRef = useRef<string | null>(null)
+  // Track which files we've already analyzed
+  const analyzedMainRef = useRef<string | null>(null)
+  const analyzedSecondaryRef = useRef<string | null>(null)
 
   // Check backend readiness
   useEffect(() => {
@@ -36,11 +33,13 @@ function App() {
     if (!api.isReady) return
     store.setLoading(true)
     store.setError(null)
-    // Reset analyzed files when main file changes
-    analyzedFilesRef.current = null
+    // Reset analyzed main file
+    analyzedMainRef.current = null
+    store.setMainAnalysisStep('idle')
     try {
       const tracks = await api.getAudioTracks(filePath)
       store.setMainFile(filePath, tracks.tracks)
+      store.setMainAnalysisStep('pending')
     } catch (err) {
       store.setError(err instanceof Error ? err.message : 'Failed to load file')
     } finally {
@@ -52,11 +51,13 @@ function App() {
     if (!api.isReady) return
     store.setLoading(true)
     store.setError(null)
-    // Reset analyzed files when secondary file changes
-    analyzedFilesRef.current = null
+    // Reset analyzed secondary file
+    analyzedSecondaryRef.current = null
+    store.setSecondaryAnalysisStep('idle')
     try {
       const tracks = await api.getAudioTracks(filePath)
       store.setSecondaryFile(filePath, tracks.tracks)
+      store.setSecondaryAnalysisStep('pending')
     } catch (err) {
       store.setError(err instanceof Error ? err.message : 'Failed to load file')
     } finally {
@@ -78,67 +79,89 @@ function App() {
     }
   }, [loadSecondaryFile])
 
-  // Auto-analyze when both files are selected
+  // Analyze main file when user triggers it
   useEffect(() => {
-    const runAnalysis = async () => {
-      if (!store.mainFilePath || !store.secondaryFilePath || !api.isReady) return
-      if (store.isLoading) return
+    const analyzeMain = async () => {
+      if (!store.mainFilePath || !api.isReady) return
+      if (store.mainAnalysisStep !== 'extracting') return
 
-      // Create a key for the current file combination
-      const filesKey = `${store.mainFilePath}:${store.selectedMainTrackIndex}:${store.secondaryFilePath}:${store.selectedSecondaryTrackIndex}`
+      const mainKey = `${store.mainFilePath}:${store.selectedMainTrackIndex}`
+      if (analyzedMainRef.current === mainKey) return
+      analyzedMainRef.current = mainKey
 
-      // Skip if we've already analyzed this combination
-      if (analyzedFilesRef.current === filesKey) return
-      analyzedFilesRef.current = filesKey
-
-      store.setLoading(true)
       store.setError(null)
-      setAnalysisStep('extracting')
 
       try {
-        // Extract audio from both files
-        const [mainExtract, secondaryExtract] = await Promise.all([
-          api.extractAudio(store.mainFilePath, store.selectedMainTrackIndex),
-          api.extractAudio(store.secondaryFilePath, store.selectedSecondaryTrackIndex)
-        ])
-
+        const mainExtract = await api.extractAudio(store.mainFilePath, store.selectedMainTrackIndex)
         store.setMainWavPath(mainExtract.wav_path)
-        store.setSecondaryWavPath(secondaryExtract.wav_path)
 
-        // Generate waveforms
-        setAnalysisStep('waveforms')
-        const [mainWaveform, secondaryWaveform] = await Promise.all([
-          api.generateWaveform(mainExtract.wav_path),
-          api.generateWaveform(secondaryExtract.wav_path)
-        ])
-
+        store.setMainAnalysisStep('waveform')
+        const mainWaveform = await api.generateWaveform(mainExtract.wav_path)
         store.setMainPeaks(mainWaveform.peaks)
-        store.setSecondaryPeaks(secondaryWaveform.peaks)
 
-        // Auto-detect alignment
-        setAnalysisStep('aligning')
-        const alignment = await api.detectAlignment(mainExtract.wav_path, secondaryExtract.wav_path)
-        store.setOffset(alignment.offset_ms)
-        store.setConfidence(alignment.confidence)
-
-        setAnalysisStep('done')
+        store.setMainAnalysisStep('idle')
       } catch (err) {
-        store.setError(err instanceof Error ? err.message : 'Analysis failed')
-        analyzedFilesRef.current = null // Allow retry
-        setAnalysisStep('idle')
-      } finally {
-        store.setLoading(false)
+        store.setError(err instanceof Error ? err.message : 'Main file analysis failed')
+        analyzedMainRef.current = null
+        store.setMainAnalysisStep('pending')
       }
     }
 
-    runAnalysis()
-  }, [
-    store.mainFilePath,
-    store.secondaryFilePath,
-    store.selectedMainTrackIndex,
-    store.selectedSecondaryTrackIndex,
-    api.isReady
-  ])
+    analyzeMain()
+  }, [store.mainFilePath, store.selectedMainTrackIndex, store.mainAnalysisStep, api.isReady])
+
+  // Analyze secondary file when user triggers it
+  useEffect(() => {
+    const analyzeSecondary = async () => {
+      if (!store.secondaryFilePath || !api.isReady) return
+      if (store.secondaryAnalysisStep !== 'extracting') return
+
+      const secondaryKey = `${store.secondaryFilePath}:${store.selectedSecondaryTrackIndex}`
+      if (analyzedSecondaryRef.current === secondaryKey) return
+      analyzedSecondaryRef.current = secondaryKey
+
+      store.setError(null)
+
+      try {
+        const secondaryExtract = await api.extractAudio(store.secondaryFilePath, store.selectedSecondaryTrackIndex)
+        store.setSecondaryWavPath(secondaryExtract.wav_path)
+
+        store.setSecondaryAnalysisStep('waveform')
+        const secondaryWaveform = await api.generateWaveform(secondaryExtract.wav_path)
+        store.setSecondaryPeaks(secondaryWaveform.peaks)
+
+        store.setSecondaryAnalysisStep('idle')
+      } catch (err) {
+        store.setError(err instanceof Error ? err.message : 'Secondary file analysis failed')
+        analyzedSecondaryRef.current = null
+        store.setSecondaryAnalysisStep('pending')
+      }
+    }
+
+    analyzeSecondary()
+  }, [store.secondaryFilePath, store.selectedSecondaryTrackIndex, store.secondaryAnalysisStep, api.isReady])
+
+  // Auto-detect alignment when both waveforms are ready
+  useEffect(() => {
+    const detectAlignment = async () => {
+      if (!store.mainWavPath || !store.secondaryWavPath || !api.isReady) return
+      if (store.mainPeaks.length === 0 || store.secondaryPeaks.length === 0) return
+      if (store.offsetMs !== 0 || store.confidence !== 0) return // Already aligned
+
+      setIsAutoDetecting(true)
+      try {
+        const alignment = await api.detectAlignment(store.mainWavPath, store.secondaryWavPath)
+        store.setOffset(alignment.offset_ms)
+        store.setConfidence(alignment.confidence)
+      } catch (err) {
+        store.setError(err instanceof Error ? err.message : 'Alignment detection failed')
+      } finally {
+        setIsAutoDetecting(false)
+      }
+    }
+
+    detectAlignment()
+  }, [store.mainWavPath, store.secondaryWavPath, store.mainPeaks.length, store.secondaryPeaks.length, api.isReady])
 
   const handleAutoDetect = useCallback(async () => {
     if (!store.mainWavPath || !store.secondaryWavPath || !api.isReady) return
@@ -222,42 +245,12 @@ function App() {
     store.reset()
     setExportStatus('idle')
     setExportError(null)
-    setAnalysisStep('idle')
     setPreviewPath(null)
     setPreviewVersion(0)
     setIsGeneratingPreview(false)
-    analyzedFilesRef.current = null
+    analyzedMainRef.current = null
+    analyzedSecondaryRef.current = null
   }, [])
-
-  const isAnalyzing = analysisStep !== 'idle' && analysisStep !== 'done' && store.isLoading
-
-  const getAnalysisStepText = () => {
-    switch (analysisStep) {
-      case 'extracting':
-        return 'Extracting audio tracks...'
-      case 'waveforms':
-        return 'Generating waveforms...'
-      case 'aligning':
-        return 'Detecting alignment...'
-      default:
-        return 'Analyzing...'
-    }
-  }
-
-  const getAnalysisProgress = () => {
-    switch (analysisStep) {
-      case 'extracting':
-        return 25
-      case 'waveforms':
-        return 50
-      case 'aligning':
-        return 75
-      case 'done':
-        return 100
-      default:
-        return 0
-    }
-  }
 
   if (!api.isReady) {
     return (
@@ -271,48 +264,46 @@ function App() {
 
   return (
     <div className={styles.app}>
-      {/* Loading Overlay */}
-      {isAnalyzing && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.loadingCard}>
-            <Loader2 className={styles.spinner} size={48} />
-            <span className={styles.loadingText}>{getAnalysisStepText()}</span>
-            <div className={styles.progressBar}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${getAnalysisProgress()}%` }}
-              />
-            </div>
-            <span className={styles.progressText}>{getAnalysisProgress()}%</span>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <header className={styles.header}>
         <h1 className={styles.title}>Video Audio Combiner</h1>
-        <button className="secondary" onClick={handleReset} disabled={store.isLoading}>
-          <RotateCcw size={14} style={{ marginRight: 6 }} />
-          Reset
-        </button>
+        <div className={styles.headerActions}>
+          {exportStatus === 'idle' && (
+            <button
+              className="primary"
+              onClick={handleExport}
+              disabled={!(store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0 && !store.isLoading)}
+            >
+              <Download size={14} style={{ marginRight: 6 }} />
+              Export
+            </button>
+          )}
+          {exportStatus === 'exporting' && (
+            <button className="primary" disabled>
+              <Loader2 size={14} className={styles.spinner} style={{ marginRight: 6 }} />
+              Exporting...
+            </button>
+          )}
+          {exportStatus === 'success' && (
+            <button className="primary" onClick={() => setExportStatus('idle')}>
+              <CheckCircle size={14} style={{ marginRight: 6 }} />
+              Done!
+            </button>
+          )}
+          {exportStatus === 'error' && (
+            <button className="primary" onClick={() => setExportStatus('idle')} title={exportError || 'Export failed'}>
+              <AlertCircle size={14} style={{ marginRight: 6 }} />
+              Failed - Retry
+            </button>
+          )}
+          <button className="secondary" onClick={handleReset} disabled={store.isLoading}>
+            <RotateCcw size={14} style={{ marginRight: 6 }} />
+            Reset
+          </button>
+        </div>
       </header>
 
-      {/* Left Panel - Source Files */}
-      <div className={styles.sourcePanel}>
-        <SourcePanel
-          onSelectMainFile={handleSelectMainFile}
-          onSelectSecondaryFile={handleSelectSecondaryFile}
-          onLoadMainFile={loadMainFile}
-          onLoadSecondaryFile={loadSecondaryFile}
-          onExport={handleExport}
-          isAnalyzing={isAnalyzing}
-          exportStatus={exportStatus}
-          exportError={exportError}
-          onResetExport={() => setExportStatus('idle')}
-        />
-      </div>
-
-      {/* Right Panel - Preview */}
+      {/* Video Preview - takes available space */}
       <div className={styles.previewPanel}>
         <PreviewPanel
           previewPath={previewPath}
@@ -323,11 +314,15 @@ function App() {
         />
       </div>
 
-      {/* Bottom Panel - Timeline */}
+      {/* Timeline/Waveforms - fixed height at bottom */}
       <div className={styles.timeline}>
         <AlignmentEditor
           onAutoDetect={handleAutoDetect}
           isAutoDetecting={isAutoDetecting}
+          onSelectMainFile={handleSelectMainFile}
+          onSelectSecondaryFile={handleSelectSecondaryFile}
+          onLoadMainFile={loadMainFile}
+          onLoadSecondaryFile={loadSecondaryFile}
         />
       </div>
 

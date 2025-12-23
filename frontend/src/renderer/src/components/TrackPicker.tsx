@@ -7,6 +7,7 @@ interface TrackPickerProps {
   selectedIndex: number
   onSelect: (index: number) => void
   disabled?: boolean
+  compact?: boolean
 }
 
 function formatDuration(seconds: number): string {
@@ -16,6 +17,11 @@ function formatDuration(seconds: number): string {
 }
 
 function formatTrackLabel(track: AudioTrack): string {
+  // Handle placeholder/empty track
+  if (track.codec === '—' || track.duration_seconds === 0) {
+    return '— | — | —'
+  }
+
   const parts: string[] = []
 
   if (track.title) {
@@ -38,15 +44,12 @@ export function TrackPicker({
   tracks,
   selectedIndex,
   onSelect,
-  disabled = false
+  disabled = false,
+  compact = false
 }: TrackPickerProps) {
-  if (tracks.length === 0) {
-    return null
-  }
-
   return (
-    <div className={styles.container}>
-      <span className="label">{label}</span>
+    <div className={`${styles.container} ${compact ? styles.compact : ''}`}>
+      {label && <span className="label">{label}</span>}
       <select
         value={selectedIndex}
         onChange={(e) => onSelect(parseInt(e.target.value))}

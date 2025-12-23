@@ -1,30 +1,30 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background-color: var(--bg-secondary);
+  gap: var(--space-3);
+  background-color: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
 }
 
 .timeDisplay {
   font-size: 13px;
   color: var(--text-secondary);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .timeDisplay strong {
@@ -34,7 +34,7 @@
 .zoomControls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .zoomLabel {
@@ -46,7 +46,7 @@
   width: 100px;
   height: 4px;
   appearance: none;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-surface);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -56,26 +56,32 @@
   width: 12px;
   height: 12px;
   background-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
+  transition: transform 150ms ease;
+}
+
+.zoomSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
 }
 
 .zoomValue {
   font-size: 12px;
   color: var(--text-secondary);
   min-width: 32px;
+  font-family: var(--font-mono);
 }
 
 /* Labels row */
 .labels {
   display: flex;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .waveformLabel {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12px;
   color: var(--text-secondary);
 }
@@ -83,23 +89,25 @@
 .dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .offsetBadge {
-  background-color: var(--bg-tertiary);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: 11px;
+  font-family: var(--font-mono);
   color: var(--accent);
-  margin-left: 4px;
+  margin-left: var(--space-1);
 }
 
 /* Waveform container with position marker */
 .waveformContainer {
   position: relative;
-  background-color: var(--bg-primary);
-  border-radius: 6px;
+  background-color: var(--bg-deep);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -108,7 +116,6 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  /* left and width set dynamically via inline style */
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -121,38 +128,40 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(234, 179, 8, 0.15);
-  border-left: 2px solid rgba(234, 179, 8, 0.6);
-  border-right: 2px solid rgba(234, 179, 8, 0.6);
-  border-radius: 4px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  background: rgba(245, 166, 35, 0.15);
+  border-left: 2px solid rgba(245, 166, 35, 0.6);
+  border-right: 2px solid rgba(245, 166, 35, 0.6);
+  border-radius: var(--radius-sm);
+  transition: background 150ms ease, border-color 150ms ease;
   cursor: grab;
 }
 
 .previewRangeBar:hover {
-  background: rgba(234, 179, 8, 0.25);
-  border-color: rgba(234, 179, 8, 0.8);
+  background: rgba(245, 166, 35, 0.25);
+  border-color: rgba(245, 166, 35, 0.8);
 }
 
 .previewRange.dragging .previewRangeBar {
-  background: rgba(234, 179, 8, 0.3);
-  border-color: #eab308;
+  background: rgba(245, 166, 35, 0.3);
+  border-color: var(--warning);
   cursor: grabbing;
 }
 
 .previewRangeLabel {
   position: absolute;
-  top: 4px;
+  top: var(--space-1);
   left: 50%;
   transform: translateX(-50%);
-  background: #eab308;
-  color: #000;
+  background: var(--warning);
+  color: var(--bg-deep);
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 3px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;
+  font-family: var(--font-mono);
+  font-weight: 500;
 }
 
 .resizeHandle {
@@ -172,10 +181,10 @@
   transform: translate(-50%, -50%);
   width: 4px;
   height: 24px;
-  background: #eab308;
+  background: var(--warning);
   border-radius: 2px;
   opacity: 0.6;
-  transition: opacity 0.15s ease;
+  transition: opacity 150ms ease;
 }
 
 .resizeHandle:hover::after {
@@ -186,14 +195,14 @@
 .waveformScroll {
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 
 .waveformContent {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 100%;
   cursor: crosshair;
 }
@@ -215,19 +224,19 @@
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
-  color: var(--text-secondary);
-  padding-top: 8px;
+  color: var(--text-tertiary);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border);
 }
 
 .legendItem {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .legendItem strong {
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .legendIcon {
@@ -240,13 +249,13 @@
 }
 
 .waveformScroll::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
 }
 
 .waveformScroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: var(--border-emphasis);
+  border-radius: var(--radius-sm);
 }
 
 .waveformScroll::-webkit-scrollbar-thumb:hover {
@@ -255,22 +264,22 @@
 
 /* Preview button */
 .previewButton {
-  background: #eab308;
-  color: #000;
+  background: var(--warning);
+  color: var(--bg-deep);
   border: none;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 150ms ease;
 }
 
 .previewButton:hover:not(:disabled) {
-  background: #ca9a06;
+  background: #d99116;
 }
 
 .previewButton:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }

@@ -1,4 +1,4 @@
-import { Play, Loader2, Video, Volume2, VolumeX } from 'lucide-react'
+import { Play, Loader2, Video } from 'lucide-react'
 import { VideoFramePreview } from './VideoFramePreview'
 import { useProjectStore } from '../stores/projectStore'
 import styles from './PreviewPanel.module.css'
@@ -52,26 +52,6 @@ export function PreviewPanel({
 
       {/* Controls */}
       <div className={styles.controls}>
-        {/* Mute Toggles */}
-        <div className={styles.muteToggles}>
-          <button
-            className={`${styles.muteButton} ${styles.main} ${store.isMainAudioMuted ? styles.muted : ''}`}
-            onClick={store.toggleMainAudioMute}
-            title={store.isMainAudioMuted ? 'Unmute main audio' : 'Mute main audio'}
-          >
-            {store.isMainAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            Main
-          </button>
-          <button
-            className={`${styles.muteButton} ${styles.secondary} ${store.isSecondaryAudioMuted ? styles.muted : ''}`}
-            onClick={store.toggleSecondaryAudioMute}
-            title={store.isSecondaryAudioMuted ? 'Unmute secondary audio' : 'Mute secondary audio'}
-          >
-            {store.isSecondaryAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            Secondary
-          </button>
-        </div>
-
         {/* Play Button */}
         <button
           className={styles.playButton}

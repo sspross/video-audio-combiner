@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -5,26 +7,68 @@
 }
 
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-tertiary: #0f3460;
-  --text-primary: #eaeaea;
-  --text-secondary: #b8b8b8;
-  --accent: #e94560;
-  --accent-hover: #ff6b6b;
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --border: #2a2a4a;
-  --waveform-main: #4ade80;
-  --waveform-secondary: #e94560;
+  /* Backgrounds - Oxide Design System */
+  --bg-deep: #080808;
+  --bg-elevated: #0F0F0F;
+  --bg-surface: #161616;
+
+  /* Legacy aliases for compatibility */
+  --bg-primary: #080808;
+  --bg-secondary: #0F0F0F;
+  --bg-tertiary: #161616;
+
+  /* Borders */
+  --border: #1F1F1F;
+  --border-emphasis: #2A2A2A;
+
+  /* Accent - Oxide Green */
+  --accent: #48D597;
+  --accent-hover: #5EEAA8;
+  --accent-muted: rgba(72, 213, 151, 0.12);
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1A1;
+  --text-tertiary: #6B6B6B;
+  --text-disabled: #404040;
+
+  /* Semantic */
+  --success: #48D597;
+  --warning: #F5A623;
+  --error: #E55B5B;
+  --info: #5B9EE5;
+
+  /* Waveforms */
+  --waveform-main: #48D597;
+  --waveform-secondary: #5B9EE5;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background-color: var(--bg-primary);
+  font-family: var(--font-sans);
+  background-color: var(--bg-deep);
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.5;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -33,14 +77,16 @@ body {
   flex-direction: column;
 }
 
+/* Buttons */
 button {
   cursor: pointer;
   border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+  transition: all 150ms ease;
 }
 
 button:disabled {
@@ -50,7 +96,7 @@ button:disabled {
 
 button.primary {
   background-color: var(--accent);
-  color: white;
+  color: var(--bg-deep);
 }
 
 button.primary:hover:not(:disabled) {
@@ -58,60 +104,92 @@ button.primary:hover:not(:disabled) {
 }
 
 button.secondary {
-  background-color: var(--bg-tertiary);
+  background-color: transparent;
   color: var(--text-primary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-emphasis);
 }
 
 button.secondary:hover:not(:disabled) {
-  background-color: var(--border);
+  background-color: var(--bg-surface);
+  border-color: #404040;
 }
 
+button.ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+button.ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+}
+
+/* Form elements */
 input[type="number"],
 input[type="text"] {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
   font-size: 14px;
+  font-family: var(--font-sans);
+}
+
+input::placeholder {
+  color: var(--text-tertiary);
 }
 
 input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(72, 213, 151, 0.15);
 }
 
 select {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
   font-size: 14px;
+  font-family: var(--font-sans);
   cursor: pointer;
 }
 
 select:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(72, 213, 151, 0.15);
 }
 
+/* Card component */
 .card {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
+.card:hover {
+  border-color: var(--border-emphasis);
+}
+
+/* Labels */
 .label {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 500;
+  color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+  margin-bottom: var(--space-2);
   display: block;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Scrollbar styling */
@@ -121,14 +199,14 @@ select:focus {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: var(--border-emphasis);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--bg-tertiary);
+  background: #404040;
 }

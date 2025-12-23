@@ -1,19 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Volume2, VolumeX } from 'lucide-react'
 import styles from './WaveformTrack.module.css'
 
 interface WaveformTrackProps {
   peaks: number[]
   color: string
-  label: string
-  duration: number
-  offsetMs?: number
   pixelsPerSecond: number
   isDraggable?: boolean
   onOffsetChange?: (deltaMs: number) => void
   isMuted: boolean
-  onMuteToggle: () => void
-  showOffsetBadge?: boolean
 }
 
 function CanvasWaveform({
@@ -65,15 +59,10 @@ function CanvasWaveform({
 export function WaveformTrack({
   peaks,
   color,
-  label,
-  duration,
-  offsetMs = 0,
   pixelsPerSecond,
   isDraggable = false,
   onOffsetChange,
-  isMuted,
-  onMuteToggle,
-  showOffsetBadge = false
+  isMuted
 }: WaveformTrackProps) {
   const isDragging = useRef(false)
   const dragStartX = useRef(0)
@@ -114,44 +103,12 @@ export function WaveformTrack({
     }
   }, [isDraggable, handleMouseMove, handleMouseUp])
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  // Calculate offset in pixels for positioning
-  const offsetPixels = (offsetMs / 1000) * pixelsPerSecond
-
   return (
-    <div className={styles.container}>
-      <div className={styles.label}>
-        <span className={styles.colorDot} style={{ backgroundColor: color }} />
-        {label} ({formatDuration(duration)})
-      </div>
-
-      <div
-        className={`${styles.waveformWrapper} ${isDraggable ? styles.draggable : ''}`}
-        style={{ transform: `translateX(${offsetPixels}px)` }}
-        onMouseDown={handleMouseDown}
-      >
-        <CanvasWaveform peaks={peaks} color={isMuted ? '#666' : color} />
-      </div>
-
-      <button
-        className={`${styles.muteButton} ${isMuted ? styles.muted : ''}`}
-        onClick={onMuteToggle}
-        title={isMuted ? 'Unmute' : 'Mute'}
-      >
-        {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-      </button>
-
-      {showOffsetBadge && (
-        <span className={styles.offsetBadge}>
-          {offsetMs > 0 ? '+' : ''}
-          {offsetMs.toFixed(0)}ms
-        </span>
-      )}
+    <div
+      className={`${styles.container} ${isDraggable ? styles.draggable : ''}`}
+      onMouseDown={handleMouseDown}
+    >
+      <CanvasWaveform peaks={peaks} color={isMuted ? '#666' : color} />
     </div>
   )
 }

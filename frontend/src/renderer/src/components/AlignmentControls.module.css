@@ -1,11 +1,11 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background-color: var(--bg-secondary);
+  gap: var(--space-4);
+  background-color: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
 .header {
@@ -16,17 +16,17 @@
 
 .title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
 }
 
 .confidenceRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background-color: var(--bg-primary);
-  border-radius: 6px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--bg-deep);
+  border-radius: var(--radius-md);
 }
 
 .confidenceLabel {
@@ -36,34 +36,35 @@
 
 .confidenceValue {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   min-width: 40px;
+  font-family: var(--font-mono);
 }
 
 .confidenceBar {
   flex: 1;
   height: 6px;
-  background-color: var(--bg-tertiary);
-  border-radius: 3px;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .confidenceFill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  border-radius: var(--radius-full);
+  transition: width 300ms ease;
 }
 
 .offsetControls {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .sliderRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .sliderLabel {
@@ -76,8 +77,8 @@
   flex: 1;
   height: 8px;
   appearance: none;
-  background-color: var(--bg-tertiary);
-  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -86,19 +87,21 @@
   width: 18px;
   height: 18px;
   background-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: background-color 150ms ease, transform 150ms ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
   background-color: var(--accent-hover);
+  transform: scale(1.1);
 }
 
 .inputRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .inputRow .label {
@@ -108,12 +111,13 @@
 .numberInput {
   width: 120px;
   text-align: right;
+  font-family: var(--font-mono);
 }
 
 .hint {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   text-align: center;
-  padding-top: 8px;
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border);
 }

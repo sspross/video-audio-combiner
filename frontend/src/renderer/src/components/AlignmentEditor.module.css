@@ -1,82 +1,487 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-elevated);
   overflow: hidden;
 }
 
-.placeholder {
+/* Track Rows Container */
+.tracksContainer {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.trackRow {
+  height: 150px;
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.trackRow:last-child {
+  border-bottom: none;
+}
+
+/* Drop zone state (on trackWaveform when no file selected) */
+.dropZone {
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.dropZone.dragOver {
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 2px var(--zone-color);
+}
+
+.dropZoneContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 100%;
+}
+
+.dropHint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--zone-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.selectFileButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: var(--space-1) 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.selectFileButton:hover {
+  background: var(--bg-surface);
+  border-color: var(--border-emphasis);
+  color: var(--text-primary);
+}
+
+.orText {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Track Header (when file loaded) */
+.trackHeader {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border);
+}
+
+.trackInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.trackDetails {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.colorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.labelText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.fileName {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileNamePlaceholder {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  padding: 2px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.clearButton:hover {
+  color: var(--error);
+  background-color: rgba(229, 91, 91, 0.12);
+}
+
+.trackMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.durationBadge {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background-color: var(--bg-elevated);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.offsetBadge {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  background-color: var(--bg-elevated);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.badgeDisabled {
+  opacity: 0.4;
+  color: var(--text-tertiary);
+}
+
+.muteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--btn-color);
+  background-color: transparent;
+  color: var(--btn-color);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.muteButton svg {
+  flex-shrink: 0;
+}
+
+.muteButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.muteButton.muted {
+  opacity: 0.4;
+  border-color: var(--border);
+  color: var(--text-tertiary);
+}
+
+.muteButton.controlDisabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--text-tertiary);
+}
+
+.muteButton.controlDisabled:hover {
+  background-color: transparent;
+}
+
+/* Track Waveform Area */
+.trackWaveform {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--bg-deep);
+  position: relative;
+  overflow: hidden;
+}
+
+.waveformScroll {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.waveformScroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+.waveformContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.waveformTrackWrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+}
+
+.waveformPlaceholder {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-secondary);
-  font-size: 14px;
+  padding: 0 var(--space-6);
 }
 
-.toolbar {
+/* Analysis Progress */
+.analysisProgress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 200px;
+}
+
+.progressSteps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progressStep {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  transition: color 200ms ease;
+}
+
+.progressStep.completed {
+  color: var(--text-secondary);
+}
+
+.progressStep.current {
+  color: var(--accent);
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  font-size: 10px;
+  font-weight: 600;
   flex-shrink: 0;
 }
 
-.toolbarSection {
+.progressStep.completed .stepIndicator {
+  background-color: var(--accent);
+  color: var(--bg-deep);
+}
+
+.progressStep.current .stepIndicator {
+  background-color: var(--accent);
+  color: var(--bg-deep);
+}
+
+.stepLabel {
+  white-space: nowrap;
+}
+
+.progressBarContainer {
+  width: 100%;
+}
+
+.progressBar {
+  width: 100%;
+  height: 3px;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent) 50%,
+    transparent 100%
+  );
+  border-radius: var(--radius-full);
+  animation: progressShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* Track Selector */
+.trackSelector {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
+}
+
+.trackDropdown {
+  padding: var(--space-1) 10px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.trackDropdown:hover {
+  border-color: var(--border-emphasis);
+}
+
+.trackDropdown:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.analyzeButton {
+  padding: var(--space-1) 10px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--bg-deep);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  white-space: nowrap;
+}
+
+.analyzeButton:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.toolbarLeft,
+.toolbarCenter,
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toolbarLeft {
+  flex: 1;
+}
+
+.toolbarRight {
+  flex: 1;
+  justify-content: flex-end;
+  gap: var(--space-4);
 }
 
 .offsetDisplay {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12px;
   color: var(--text-secondary);
 }
 
 .offsetValue {
-  background-color: var(--bg-tertiary);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  background-color: var(--bg-elevated);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
   color: var(--accent);
   min-width: 70px;
   text-align: center;
+  border: 1px solid var(--border);
 }
 
 .autoDetectButton {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: var(--bg-tertiary);
+  gap: var(--space-1);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  padding: 4px 10px;
-  border-radius: 4px;
+  padding: var(--space-1) 10px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 150ms ease;
 }
 
 .autoDetectButton:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--bg-deep);
 }
 
 .autoDetectButton:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .zoomControls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .zoomLabel {
@@ -88,7 +493,7 @@
   width: 100px;
   height: 4px;
   appearance: none;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-elevated);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -98,71 +503,39 @@
   width: 12px;
   height: 12px;
   background-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
+  transition: transform 150ms ease;
+}
+
+.zoomSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
 }
 
 .zoomValue {
   font-size: 12px;
   color: var(--text-secondary);
   min-width: 32px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-}
-
-.instructions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-left: auto;
+  font-family: var(--font-mono);
 }
 
 .instruction {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
 .kbd {
   display: inline-block;
-  background: var(--bg-tertiary);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 3px;
-  padding: 1px 4px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  padding: 1px var(--space-1);
+  font-family: var(--font-mono);
   font-size: 10px;
-}
-
-.waveformSection {
-  flex: 1;
-  position: relative;
-  background-color: var(--bg-primary);
-  overflow: hidden;
-  min-height: 0;
-}
-
-.waveformScroll {
-  height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 8px 0;
-}
-
-.waveformContent {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 100%;
-  height: 100%;
-  cursor: crosshair;
-}
-
-.waveformTrackWrapper {
-  position: relative;
-  flex: 1;
-  min-height: 0;
+  color: var(--text-secondary);
 }
 
 /* Scrollbar styling */
@@ -171,13 +544,13 @@
 }
 
 .waveformScroll::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
 }
 
 .waveformScroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: var(--border-emphasis);
+  border-radius: var(--radius-sm);
 }
 
 .waveformScroll::-webkit-scrollbar-thumb:hover {
@@ -185,6 +558,7 @@
 }
 
 .spinner {
+  color: var(--accent);
   animation: spin 1s linear infinite;
 }
 
@@ -192,4 +566,15 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Disabled states */
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.zoomSlider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

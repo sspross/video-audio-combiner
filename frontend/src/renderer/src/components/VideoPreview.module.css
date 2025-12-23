@@ -1,7 +1,7 @@
 .container {
-  background-color: var(--bg-secondary);
-  border: 2px solid #eab308;
-  border-radius: 8px;
+  background-color: var(--bg-elevated);
+  border: 2px solid var(--warning);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -9,19 +9,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 
 .title {
   font-size: 14px;
-  font-weight: 600;
-  color: #eab308;
+  font-weight: 500;
+  color: var(--warning);
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .actionButton {
@@ -30,17 +30,18 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: rgba(234, 179, 8, 0.1);
-  border: 1px solid #eab308;
-  border-radius: 4px;
-  color: #eab308;
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  color: var(--warning);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 150ms ease;
+  padding: 0;
 }
 
 .actionButton:hover:not(:disabled) {
-  background: #eab308;
-  color: #000;
+  background: var(--warning);
+  color: var(--bg-deep);
 }
 
 .actionButton:disabled {
@@ -68,7 +69,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--text-secondary);
   font-size: 13px;
 }
@@ -77,8 +78,8 @@
   width: 32px;
   height: 32px;
   border: 3px solid var(--border);
-  border-top-color: #eab308;
-  border-radius: 50%;
+  border-top-color: var(--warning);
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
 }
 
