@@ -1,80 +1,67 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, Wand2, Upload, FolderOpen, X, Volume2, VolumeX } from 'lucide-react'
+import { Loader2, Wand2, Volume2, VolumeX, FolderOpen } from 'lucide-react'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
+import { PreviewRangeSelector } from './PreviewRangeSelector'
 import { useProjectStore } from '../stores/projectStore'
-import type { AnalysisStep, AudioTrack } from '../types'
 import styles from './AlignmentEditor.module.css'
 
-interface AnalysisProgressProps {
-  step: AnalysisStep
+interface TrackHeaderProps {
+  label: string
+  color: string
+  filePath: string | null
+  fileName: string | null
+  duration?: number
+  isMuted: boolean
+  onMuteToggle: () => void
 }
 
-function AnalysisProgress({ step }: AnalysisProgressProps) {
-  const steps = [
-    { key: 'extracting', label: 'Extracting audio...' },
-    { key: 'waveform', label: 'Generating waveform...' }
-  ]
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
 
-  const currentIndex = steps.findIndex((s) => s.key === step)
+function TrackHeader({
+  label,
+  color,
+  filePath,
+  fileName,
+  duration,
+  isMuted,
+  onMuteToggle
+}: TrackHeaderProps) {
+  const hasFile = !!filePath
 
   return (
-    <div className={styles.analysisProgress}>
-      <div className={styles.progressSteps}>
-        {steps.map((s, i) => (
-          <div
-            key={s.key}
-            className={`${styles.progressStep} ${i < currentIndex ? styles.completed : ''} ${s.key === step ? styles.current : ''}`}
-          >
-            <span className={styles.stepIndicator}>
-              {i < currentIndex ? '✓' : i + 1}
+    <div className={styles.trackHeader}>
+      <div className={styles.trackInfo}>
+        <span className={styles.colorDot} style={{ backgroundColor: color }} />
+        <div className={styles.trackDetails}>
+          <span className={styles.labelText}>{label}</span>
+          {hasFile ? (
+            <span className={styles.fileName} title={filePath}>
+              {fileName}
             </span>
-            <span className={styles.stepLabel}>{s.label}</span>
-          </div>
-        ))}
-      </div>
-      <div className={styles.progressBarContainer}>
-        <div className={styles.progressBar}>
-          <div className={styles.progressFill} />
+          ) : (
+            <span className={styles.fileNamePlaceholder}>No file selected</span>
+          )}
         </div>
       </div>
-    </div>
-  )
-}
-
-interface TrackSelectorProps {
-  tracks: AudioTrack[]
-  selectedIndex: number
-  onSelect: (index: number) => void
-  onAnalyze: () => void
-}
-
-function TrackSelector({ tracks, selectedIndex, onSelect, onAnalyze }: TrackSelectorProps) {
-  const formatTrackLabel = (track: AudioTrack) => {
-    const parts = [`Track ${track.index + 1}`]
-    if (track.language) parts.push(track.language)
-    parts.push(track.codec)
-    parts.push(`${track.channels}ch`)
-    if (track.title) parts.push(`- ${track.title}`)
-    return parts.join(' • ')
-  }
-
-  return (
-    <div className={styles.trackSelector}>
-      <select
-        className={styles.trackDropdown}
-        value={selectedIndex}
-        onChange={(e) => onSelect(Number(e.target.value))}
-      >
-        {tracks.map((track) => (
-          <option key={track.index} value={track.index}>
-            {formatTrackLabel(track)}
-          </option>
-        ))}
-      </select>
-      <button className={styles.analyzeButton} onClick={onAnalyze}>
-        Analyze
-      </button>
+      <div className={styles.trackMeta}>
+        <span className={`${styles.durationBadge} ${!hasFile || !duration ? styles.badgeDisabled : ''}`}>
+          {duration !== undefined && duration > 0 ? formatDuration(duration) : '—:——'}
+        </span>
+        <button
+          className={`${styles.muteButton} ${isMuted ? styles.muted : ''} ${!hasFile ? styles.controlDisabled : ''}`}
+          style={{ '--btn-color': color } as React.CSSProperties}
+          onClick={onMuteToggle}
+          title={isMuted ? 'Unmute' : 'Mute'}
+          disabled={!hasFile}
+        >
+          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        </button>
+      </div>
     </div>
   )
 }
@@ -88,195 +75,22 @@ interface AlignmentEditorProps {
   onLoadSecondaryFile: (path: string) => void
 }
 
-interface TrackRowProps {
-  label: string
-  color: string
-  filePath: string | null
-  fileName: string | null
-  analysisStep: AnalysisStep
-  onSelectFile: () => void
-  onFileDrop: (path: string) => void
-  onClear: () => void
-  isMuted: boolean
-  onMuteToggle: () => void
-  duration?: number
-  children?: React.ReactNode
-}
-
-function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-function TrackRow({
-  label,
-  color,
-  filePath,
-  fileName,
-  analysisStep,
-  onSelectFile,
-  onFileDrop,
-  onClear,
-  isMuted,
-  onMuteToggle,
-  duration,
-  children
-}: TrackRowProps) {
-  const isAnalyzing = analysisStep !== 'idle' && analysisStep !== 'pending'
-  const hasFile = !!filePath
-  void isAnalyzing // Used for future disabled states
-  const [isDragOver, setIsDragOver] = useState(false)
-
-  const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!filePath) {
-        setIsDragOver(true)
-      }
-    },
-    [filePath]
-  )
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(false)
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragOver(false)
-
-      const files = e.dataTransfer.files
-      if (files.length > 0) {
-        const path = window.electron.getPathForFile(files[0])
-        if (path) {
-          onFileDrop(path)
-        }
-      }
-    },
-    [onFileDrop]
-  )
-
-  // Always show full layout with header + waveform area
-  return (
-    <div className={styles.trackRow}>
-      <div className={styles.trackHeader}>
-        <div className={styles.trackInfo}>
-          <span className={styles.colorDot} style={{ backgroundColor: color }} />
-          <div className={styles.trackDetails}>
-            <span className={styles.labelText}>{label}</span>
-            {hasFile ? (
-              <span className={styles.fileName} title={filePath}>
-                {fileName}
-              </span>
-            ) : (
-              <span className={styles.fileNamePlaceholder}>No file selected</span>
-            )}
-          </div>
-          {hasFile && (
-            <button
-              className={styles.clearButton}
-              onClick={onClear}
-              disabled={isAnalyzing}
-              title="Clear selection"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-        <div className={styles.trackMeta}>
-          <span className={`${styles.durationBadge} ${!hasFile || !duration ? styles.badgeDisabled : ''}`}>
-            {duration !== undefined && duration > 0 ? formatDuration(duration) : '—:——'}
-          </span>
-          <button
-            className={`${styles.muteButton} ${isMuted ? styles.muted : ''} ${!hasFile ? styles.controlDisabled : ''}`}
-            style={{ '--btn-color': color } as React.CSSProperties}
-            onClick={onMuteToggle}
-            title={isMuted ? 'Unmute' : 'Mute'}
-            disabled={!hasFile}
-          >
-            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          </button>
-        </div>
-      </div>
-      <div
-        className={`${styles.trackWaveform} ${!hasFile ? styles.dropZone : ''} ${isDragOver ? styles.dragOver : ''}`}
-        style={{ '--zone-color': color } as React.CSSProperties}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {hasFile ? (
-          children
-        ) : (
-          <div className={styles.dropZoneContent}>
-            {isDragOver ? (
-              <div className={styles.dropHint}>
-                <Upload size={24} />
-                <span>Drop video file here</span>
-              </div>
-            ) : (
-              <>
-                <button className={styles.selectFileButton} onClick={onSelectFile}>
-                  <FolderOpen size={14} />
-                  Select
-                </button>
-                <span className={styles.orText}>or drag & drop video file</span>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export function AlignmentEditor({
   onAutoDetect,
-  isAutoDetecting,
-  onSelectMainFile,
-  onSelectSecondaryFile,
-  onLoadMainFile,
-  onLoadSecondaryFile
+  isAutoDetecting
 }: AlignmentEditorProps) {
   const store = useProjectStore()
   const [zoom, setZoom] = useState(1)
-  const mainScrollRef = useRef<HTMLDivElement>(null)
-  const secondaryScrollRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const isScrollSyncing = useRef(false)
-
-  // Sync scroll positions between main and secondary waveforms
-  const handleMainScroll = useCallback(() => {
-    if (isScrollSyncing.current) return
-    if (!mainScrollRef.current || !secondaryScrollRef.current) return
-    isScrollSyncing.current = true
-    secondaryScrollRef.current.scrollLeft = mainScrollRef.current.scrollLeft
-    requestAnimationFrame(() => {
-      isScrollSyncing.current = false
-    })
-  }, [])
-
-  const handleSecondaryScroll = useCallback(() => {
-    if (isScrollSyncing.current) return
-    if (!mainScrollRef.current || !secondaryScrollRef.current) return
-    isScrollSyncing.current = true
-    mainScrollRef.current.scrollLeft = secondaryScrollRef.current.scrollLeft
-    requestAnimationFrame(() => {
-      isScrollSyncing.current = false
-    })
-  }, [])
+  const justFinishedDragging = useRef(false)
 
   const hasMainFile = !!store.mainFilePath
   const hasSecondaryFile = !!store.secondaryFilePath
   const hasMainPeaks = store.mainPeaks.length > 0
   const hasSecondaryPeaks = store.secondaryPeaks.length > 0
   const hasWaveforms = hasMainPeaks && hasSecondaryPeaks
+  const hasAnyFiles = hasMainFile || hasSecondaryFile
 
   const mainFileName = store.mainFilePath ? store.mainFilePath.split('/').pop() || null : null
   const secondaryFileName = store.secondaryFilePath ? store.secondaryFilePath.split('/').pop() || null : null
@@ -324,22 +138,46 @@ export function AlignmentEditor({
     secondaryStartOffset + displaySecondaryPeaks.length * pixelsPerPeak
   const totalWidth = Math.max(mainTotalWidth, secondaryTotalWidth)
 
-  // Handle click on waveform area to set cursor position
+  // Handle click on waveform area to center preview range
   const handleWaveformClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!mainScrollRef.current) return
+      // Ignore click if we just finished dragging/resizing
+      if (justFinishedDragging.current) {
+        justFinishedDragging.current = false
+        return
+      }
+      if (!scrollRef.current) return
 
-      const container = mainScrollRef.current
+      const container = scrollRef.current
       const rect = container.getBoundingClientRect()
       const clickX = e.clientX - rect.left + container.scrollLeft
 
       // Account for mainStartOffset and convert to time
-      const clickTime = (clickX - mainStartOffset) / pixelsPerSecond
-      const clampedTime = Math.max(0, Math.min(mainDuration, clickTime))
-      store.setCursorPosition(clampedTime * 1000)
+      const clickTimeSeconds = (clickX - mainStartOffset) / pixelsPerSecond
+
+      // Center the preview range on the clicked position
+      const halfDuration = store.previewDurationSeconds / 2
+      const newStartTimeMs = Math.max(
+        0,
+        Math.min(mainDuration * 1000 - store.previewDurationSeconds * 1000, (clickTimeSeconds - halfDuration) * 1000)
+      )
+      store.setPreviewStartTime(newStartTimeMs)
+      store.setCursorPosition(newStartTimeMs)
     },
     [mainStartOffset, pixelsPerSecond, mainDuration, store]
   )
+
+  // Handle drag state changes from preview range selector
+  const handlePreviewDragStateChange = useCallback((isDragging: boolean) => {
+    if (!isDragging) {
+      // Set flag when drag ends to prevent click handler
+      justFinishedDragging.current = true
+      // Reset flag after a short delay
+      setTimeout(() => {
+        justFinishedDragging.current = false
+      }, 100)
+    }
+  }, [])
 
   // Handle offset change from dragging secondary waveform
   const handleOffsetChange = useCallback(
@@ -375,9 +213,9 @@ export function AlignmentEditor({
       setZoom(newZoom)
 
       requestAnimationFrame(() => {
-        if (!mainScrollRef.current || mainDuration <= 0) return
+        if (!scrollRef.current || mainDuration <= 0) return
 
-        const container = mainScrollRef.current
+        const container = scrollRef.current
         const containerWidth = container.clientWidth
 
         const newMaxPeaks = Math.floor(2000 * newZoom)
@@ -387,128 +225,144 @@ export function AlignmentEditor({
         const cursorPixels = (store.cursorPositionMs / 1000) * newPixelsPerSecond
         const newScrollLeft = cursorPixels - containerWidth / 2
         container.scrollLeft = newScrollLeft
-        if (secondaryScrollRef.current) {
-          secondaryScrollRef.current.scrollLeft = newScrollLeft
-        }
       })
     },
     [mainDuration, store.mainPeaks.length, store.cursorPositionMs]
   )
 
+  // Handle open wizard button
+  const handleOpenWizard = useCallback(() => {
+    store.setShowSetupWizard(true)
+    store.setSetupWizardStep('main-video')
+  }, [store])
+
+  // Determine what to show in waveform areas
+  const mainWaveformContent = () => {
+    if (hasMainPeaks) {
+      return (
+        <div
+          className={styles.waveformTrackWrapper}
+          style={{ marginLeft: mainStartOffset }}
+        >
+          <WaveformTrack
+            peaks={displayMainPeaks}
+            color="#4ade80"
+            pixelsPerSecond={pixelsPerSecond}
+            isMuted={store.isMainAudioMuted}
+          />
+        </div>
+      )
+    }
+    return null
+  }
+
+  const secondaryWaveformContent = () => {
+    if (hasSecondaryPeaks) {
+      return (
+        <div
+          className={styles.waveformTrackWrapper}
+          style={{ marginLeft: secondaryStartOffset }}
+        >
+          <WaveformTrack
+            peaks={displaySecondaryPeaks}
+            color="#e94560"
+            pixelsPerSecond={pixelsPerSecond}
+            isDraggable
+            onOffsetChange={handleOffsetChange}
+            isMuted={store.isSecondaryAudioMuted}
+          />
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className={styles.container} ref={containerRef} tabIndex={0}>
-      {/* Track Rows */}
-      <div className={styles.tracksContainer}>
-        {/* Main Track Row */}
-        <TrackRow
-          label="Main Video"
-          color="#4ade80"
-          filePath={store.mainFilePath}
-          fileName={mainFileName}
-          analysisStep={store.mainAnalysisStep}
-          onSelectFile={onSelectMainFile}
-          onFileDrop={onLoadMainFile}
-          onClear={() => store.setMainFile('', [])}
-          isMuted={store.isMainAudioMuted}
-          onMuteToggle={store.toggleMainAudioMute}
-          duration={mainDuration}
-        >
-          {hasMainPeaks ? (
-            <div ref={mainScrollRef} className={styles.waveformScroll} onScroll={handleMainScroll}>
+      {/* Main content area with headers and waveforms */}
+      <div className={styles.mainContent}>
+        {/* Track Headers Sidebar */}
+        <div className={styles.headersSidebar}>
+          <TrackHeader
+            label="Main Video"
+            color="#4ade80"
+            filePath={store.mainFilePath}
+            fileName={mainFileName}
+            duration={mainDuration}
+            isMuted={store.isMainAudioMuted}
+            onMuteToggle={store.toggleMainAudioMute}
+          />
+          <TrackHeader
+            label="Audio Source"
+            color="#e94560"
+            filePath={store.secondaryFilePath}
+            fileName={secondaryFileName}
+            duration={secondaryDuration}
+            isMuted={store.isSecondaryAudioMuted}
+            onMuteToggle={store.toggleSecondaryAudioMute}
+          />
+        </div>
+
+        {/* Unified Waveform Area */}
+        <div className={styles.waveformArea}>
+          {hasWaveforms ? (
+            // Both waveforms ready - single scroll container
+            <div ref={scrollRef} className={styles.waveformScroll}>
               <div
                 className={styles.waveformContent}
                 style={{ width: totalWidth || '100%' }}
                 onClick={handleWaveformClick}
               >
-                <TimelineCursor
-                  positionMs={store.cursorPositionMs}
+                {/* Preview Range Selector - spans both tracks */}
+                <PreviewRangeSelector
+                  startTimeMs={store.previewStartTimeMs}
+                  durationSeconds={store.previewDurationSeconds}
                   pixelsPerSecond={pixelsPerSecond}
                   baseOffset={mainStartOffset}
+                  maxTimeMs={mainDuration * 1000}
+                  onStartTimeChange={(ms) => {
+                    store.setPreviewStartTime(ms)
+                    store.setCursorPosition(ms)
+                  }}
+                  onDurationChange={store.setPreviewDuration}
+                  onDragStateChange={handlePreviewDragStateChange}
                 />
-                <div
-                  className={styles.waveformTrackWrapper}
-                  style={{ marginLeft: mainStartOffset }}
-                >
-                  <WaveformTrack
-                    peaks={displayMainPeaks}
-                    color="#4ade80"
-                    pixelsPerSecond={pixelsPerSecond}
-                    isMuted={store.isMainAudioMuted}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : store.mainAnalysisStep === 'pending' ? (
-            <div className={styles.waveformPlaceholder}>
-              <TrackSelector
-                tracks={store.mainTracks}
-                selectedIndex={store.selectedMainTrackIndex}
-                onSelect={store.setSelectedMainTrack}
-                onAnalyze={() => store.setMainAnalysisStep('extracting')}
-              />
-            </div>
-          ) : hasMainFile ? (
-            <div className={styles.waveformPlaceholder}>
-              <AnalysisProgress step={store.mainAnalysisStep} />
-            </div>
-          ) : null}
-        </TrackRow>
 
-        {/* Secondary Track Row */}
-        <TrackRow
-          label="Audio Source"
-          color="#e94560"
-          filePath={store.secondaryFilePath}
-          fileName={secondaryFileName}
-          analysisStep={store.secondaryAnalysisStep}
-          onSelectFile={onSelectSecondaryFile}
-          onFileDrop={onLoadSecondaryFile}
-          onClear={() => store.setSecondaryFile('', [])}
-          isMuted={store.isSecondaryAudioMuted}
-          onMuteToggle={store.toggleSecondaryAudioMute}
-          duration={secondaryDuration}
-        >
-          {hasSecondaryPeaks ? (
-            <div ref={secondaryScrollRef} className={styles.waveformScroll} onScroll={handleSecondaryScroll}>
-              <div
-                className={styles.waveformContent}
-                style={{ width: totalWidth || '100%' }}
-              >
+                {/* Timeline Cursor */}
                 <TimelineCursor
                   positionMs={store.cursorPositionMs}
                   pixelsPerSecond={pixelsPerSecond}
                   baseOffset={mainStartOffset}
                 />
-                <div
-                  className={styles.waveformTrackWrapper}
-                  style={{ marginLeft: secondaryStartOffset }}
-                >
-                  <WaveformTrack
-                    peaks={displaySecondaryPeaks}
-                    color="#e94560"
-                    pixelsPerSecond={pixelsPerSecond}
-                    isDraggable
-                    onOffsetChange={handleOffsetChange}
-                    isMuted={store.isSecondaryAudioMuted}
-                  />
+
+                {/* Track waveforms stacked vertically */}
+                <div className={styles.tracksStack}>
+                  <div className={styles.trackWaveformRow}>
+                    {mainWaveformContent()}
+                  </div>
+                  <div className={styles.trackWaveformRow}>
+                    {secondaryWaveformContent()}
+                  </div>
                 </div>
               </div>
             </div>
-          ) : store.secondaryAnalysisStep === 'pending' ? (
-            <div className={styles.waveformPlaceholder}>
-              <TrackSelector
-                tracks={store.secondaryTracks}
-                selectedIndex={store.selectedSecondaryTrackIndex}
-                onSelect={store.setSelectedSecondaryTrack}
-                onAnalyze={() => store.setSecondaryAnalysisStep('extracting')}
-              />
+          ) : (
+            // Empty state or loading - show placeholder
+            <div className={styles.emptyState}>
+              <div className={styles.emptyStateContent}>
+                <p className={styles.emptyStateText}>
+                  {hasAnyFiles ? 'Analyzing audio...' : 'No files loaded'}
+                </p>
+                {!hasAnyFiles && (
+                  <button className={styles.selectFilesButton} onClick={handleOpenWizard}>
+                    <FolderOpen size={16} />
+                    Select Files
+                  </button>
+                )}
+              </div>
             </div>
-          ) : hasSecondaryFile ? (
-            <div className={styles.waveformPlaceholder}>
-              <AnalysisProgress step={store.secondaryAnalysisStep} />
-            </div>
-          ) : null}
-        </TrackRow>
+          )}
+        </div>
       </div>
 
       {/* Toolbar - always visible */}
@@ -555,15 +409,15 @@ export function AlignmentEditor({
 
         <div className={`${styles.toolbarRight} ${!hasWaveforms ? styles.disabled : ''}`}>
           <span className={styles.instruction}>
-            Click to position cursor
+            Click to position preview
           </span>
           <span className={styles.instruction}>
-            Drag red track to adjust
+            Drag edges to resize
           </span>
           <span className={styles.instruction}>
             <span className={styles.kbd}>←</span>
             <span className={styles.kbd}>→</span>
-            Fine-tune
+            Fine-tune offset
           </span>
         </div>
       </div>

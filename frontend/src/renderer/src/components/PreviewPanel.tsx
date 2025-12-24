@@ -13,12 +13,11 @@ interface PreviewPanelProps {
   extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
 }
 
-function formatTime(ms: number): string {
+function formatTimeShort(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
-  const milliseconds = Math.floor((ms % 1000) / 10)
-  return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
 export function PreviewPanel({
@@ -56,6 +55,11 @@ export function PreviewPanel({
 
       {/* Controls */}
       <div className={styles.controls}>
+        {/* Preview Time Range */}
+        <span className={styles.previewTimeRange}>
+          {formatTimeShort(store.previewStartTimeMs)} – {formatTimeShort(store.previewStartTimeMs + store.previewDurationSeconds * 1000)}
+        </span>
+
         {/* Play Button */}
         <button
           className={styles.playButton}
@@ -64,16 +68,11 @@ export function PreviewPanel({
           title="Generate preview"
         >
           {isGeneratingPreview ? (
-            <Loader2 size={20} className={styles.spinner} />
+            <Loader2 size={16} className={styles.spinner} />
           ) : (
-            <Play size={20} style={{ marginLeft: 2 }} />
+            <Play size={16} style={{ marginLeft: 1 }} />
           )}
         </button>
-
-        {/* Time Display */}
-        <div className={styles.timeDisplay}>
-          {formatTime(store.cursorPositionMs)}
-        </div>
       </div>
     </div>
   )

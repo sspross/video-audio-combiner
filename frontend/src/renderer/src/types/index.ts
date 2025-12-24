@@ -55,6 +55,8 @@ export type WorkflowStep =
 
 export type AnalysisStep = 'idle' | 'pending' | 'extracting' | 'waveform'
 
+export type SetupWizardStep = 'main-video' | 'audio-source' | 'track-selection' | 'analyzing'
+
 export interface ProjectState {
   mainFilePath: string | null
   secondaryFilePath: string | null
@@ -77,5 +79,9 @@ export interface ProjectState {
   cursorPositionMs: number
   isMainAudioMuted: boolean
   isSecondaryAudioMuted: boolean
+  previewStartTimeMs: number
   previewDurationSeconds: number
+  // Setup wizard state
+  showSetupWizard: boolean
+  setupWizardStep: SetupWizardStep
 }

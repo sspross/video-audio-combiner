@@ -45,34 +45,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
+  gap: var(--space-1);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
   background-color: var(--info);
   border: none;
   cursor: pointer;
   color: var(--bg-deep);
-  transition: background-color 150ms ease, transform 100ms ease;
-  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 150ms ease;
 }
 
 .playButton:hover {
   background-color: #7ab4e8;
-  transform: scale(1.05);
 }
 
 .playButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-.timeDisplay {
+.previewTimeRange {
+  display: flex;
+  align-items: center;
+  height: 28px;
   font-family: var(--font-mono);
   font-size: 13px;
-  color: var(--text-secondary);
-  min-width: 120px;
-  text-align: center;
+  color: var(--info);
+  background: var(--bg-surface);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
 }
 
 .spinner {

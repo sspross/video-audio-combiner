@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useRef } from 'react'
 import { Loader2, RotateCcw, AlertCircle, Download, CheckCircle } from 'lucide-react'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
+import { SetupWizard } from './components/SetupWizard'
 import { useProjectStore } from './stores/projectStore'
 import { useBackendApi } from './hooks/useBackendApi'
 import styles from './App.module.css'
@@ -141,6 +142,20 @@ function App() {
     analyzeSecondary()
   }, [store.secondaryFilePath, store.selectedSecondaryTrackIndex, store.secondaryAnalysisStep, api.isReady])
 
+  // Auto-advance wizard steps when files are loaded
+  useEffect(() => {
+    if (!store.showSetupWizard) return
+
+    // When main file is loaded and we're on step 1, advance to step 2
+    if (store.setupWizardStep === 'main-video' && store.mainFilePath && store.mainTracks.length > 0) {
+      store.setSetupWizardStep('audio-source')
+    }
+    // When secondary file is loaded and we're on step 2, advance to step 3
+    else if (store.setupWizardStep === 'audio-source' && store.secondaryFilePath && store.secondaryTracks.length > 0) {
+      store.setSetupWizardStep('track-selection')
+    }
+  }, [store.showSetupWizard, store.setupWizardStep, store.mainFilePath, store.mainTracks.length, store.secondaryFilePath, store.secondaryTracks.length])
+
   // Auto-detect alignment when both waveforms are ready
   useEffect(() => {
     const detectAlignment = async () => {
@@ -187,7 +202,7 @@ function App() {
       const result = await api.generatePreview(
         store.mainFilePath,
         store.secondaryWavPath,
-        store.cursorPositionMs / 1000,
+        store.previewStartTimeMs / 1000,
         store.previewDurationSeconds,
         store.offsetMs,
         store.isMainAudioMuted,
@@ -200,7 +215,7 @@ function App() {
     } finally {
       setIsGeneratingPreview(false)
     }
-  }, [store.mainFilePath, store.secondaryWavPath, store.cursorPositionMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
+  }, [store.mainFilePath, store.secondaryWavPath, store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
 
   const handleExport = useCallback(async () => {
     if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
@@ -334,6 +349,16 @@ function App() {
           <span>{store.error}</span>
           <button onClick={() => store.setError(null)}>Dismiss</button>
         </div>
+      )}
+
+      {/* Setup Wizard Modal */}
+      {store.showSetupWizard && (
+        <SetupWizard
+          onSelectMainFile={handleSelectMainFile}
+          onSelectSecondaryFile={handleSelectSecondaryFile}
+          onLoadMainFile={loadMainFile}
+          onLoadSecondaryFile={loadSecondaryFile}
+        />
       )}
     </div>
   )

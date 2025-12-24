@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AnalysisStep, AudioTrack, ProjectState, WorkflowStep } from '../types'
+import type { AnalysisStep, AudioTrack, ProjectState, SetupWizardStep, WorkflowStep } from '../types'
 
 interface ProjectActions {
   setMainFile: (path: string, tracks: AudioTrack[]) => void
@@ -24,7 +24,11 @@ interface ProjectActions {
   setSecondaryAudioMuted: (muted: boolean) => void
   toggleMainAudioMute: () => void
   toggleSecondaryAudioMute: () => void
+  setPreviewStartTime: (ms: number) => void
   setPreviewDuration: (seconds: number) => void
+  // Setup wizard actions
+  setShowSetupWizard: (show: boolean) => void
+  setSetupWizardStep: (step: SetupWizardStep) => void
 }
 
 const initialState: ProjectState = {
@@ -49,7 +53,11 @@ const initialState: ProjectState = {
   cursorPositionMs: 0,
   isMainAudioMuted: true,
   isSecondaryAudioMuted: false,
-  previewDurationSeconds: 15
+  previewStartTimeMs: 0,
+  previewDurationSeconds: 15,
+  // Setup wizard state
+  showSetupWizard: true,
+  setupWizardStep: 'main-video'
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
@@ -96,5 +104,9 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   toggleMainAudioMute: () => set((state) => ({ isMainAudioMuted: !state.isMainAudioMuted })),
   toggleSecondaryAudioMute: () =>
     set((state) => ({ isSecondaryAudioMuted: !state.isSecondaryAudioMuted })),
-  setPreviewDuration: (seconds) => set({ previewDurationSeconds: seconds })
+  setPreviewStartTime: (ms) => set({ previewStartTimeMs: ms }),
+  setPreviewDuration: (seconds) => set({ previewDurationSeconds: seconds }),
+  // Setup wizard actions
+  setShowSetupWizard: (show) => set({ showSetupWizard: show }),
+  setSetupWizardStep: (step) => set({ setupWizardStep: step })
 }))
