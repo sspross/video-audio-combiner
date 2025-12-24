@@ -8,6 +8,8 @@ from video_audio_combiner.api.schemas import (
     AlignResponse,
     ExtractRequest,
     ExtractResponse,
+    FrameRequest,
+    FrameResponse,
     HealthResponse,
     MergeRequest,
     MergeResponse,
@@ -109,6 +111,20 @@ async def generate_preview(request: PreviewRequest) -> PreviewResponse:
             offset_ms=request.offset_ms,
             mute_main_audio=request.mute_main_audio,
             mute_secondary_audio=request.mute_secondary_audio,
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/extract/frame", response_model=FrameResponse)
+async def extract_frame(request: FrameRequest) -> FrameResponse:
+    """Extract a single frame from video at the specified time."""
+    try:
+        return ffmpeg_service.extract_frame(
+            video_path=request.video_path,
+            time_seconds=request.time_seconds,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

@@ -9,7 +9,8 @@
   background-color: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 10px 14px;
+  height: var(--control-height);
+  padding: 0 12px;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-family: var(--font-sans);
@@ -28,6 +29,7 @@
 }
 
 .compact .select {
-  padding: 6px 10px;
+  height: 28px;
+  padding: 0 10px;
   font-size: 12px;
 }

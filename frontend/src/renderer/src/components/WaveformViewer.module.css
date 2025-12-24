@@ -264,12 +264,16 @@
 
 /* Preview button */
 .previewButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--warning);
   color: var(--bg-deep);
   border: none;
-  padding: 6px 12px;
+  height: var(--control-height);
+  padding: 0 12px;
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 150ms ease;

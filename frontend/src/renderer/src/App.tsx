@@ -268,6 +268,10 @@ function App() {
       <header className={styles.header}>
         <h1 className={styles.title}>Video Audio Combiner</h1>
         <div className={styles.headerActions}>
+          <button className="secondary" onClick={handleReset} disabled={store.isLoading}>
+            <RotateCcw size={14} style={{ marginRight: 6 }} />
+            Reset
+          </button>
           {exportStatus === 'idle' && (
             <button
               className="primary"
@@ -296,10 +300,6 @@ function App() {
               Failed - Retry
             </button>
           )}
-          <button className="secondary" onClick={handleReset} disabled={store.isLoading}>
-            <RotateCcw size={14} style={{ marginRight: 6 }} />
-            Reset
-          </button>
         </div>
       </header>
 
@@ -311,6 +311,7 @@ function App() {
           isGeneratingPreview={isGeneratingPreview}
           onPreviewRequest={handlePreviewRequest}
           onPreviewEnded={() => setPreviewPath(null)}
+          extractFrame={api.extractFrame}
         />
       </div>
 

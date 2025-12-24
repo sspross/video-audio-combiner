@@ -40,6 +40,11 @@ export interface PreviewResponse {
   duration_seconds: number
 }
 
+export interface FrameResponse {
+  frame_path: string
+  time_seconds: number
+}
+
 export type WorkflowStep =
   | 'select-files'
   | 'select-tracks'

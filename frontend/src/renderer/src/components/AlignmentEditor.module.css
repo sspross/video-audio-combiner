@@ -54,12 +54,14 @@
 .selectFileButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  padding: var(--space-1) 10px;
+  height: var(--control-height);
+  padding: 0 12px;
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 150ms ease;
@@ -370,12 +372,13 @@
 }
 
 .trackDropdown {
-  padding: var(--space-1) 10px;
+  height: var(--control-height);
+  padding: 0 12px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -389,12 +392,13 @@
 }
 
 .analyzeButton {
-  padding: var(--space-1) 10px;
+  height: var(--control-height);
+  padding: 0 12px;
   background-color: var(--accent);
   border: none;
   border-radius: var(--radius-sm);
   color: var(--bg-deep);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 150ms ease;
@@ -444,24 +448,31 @@
 
 .offsetValue {
   background-color: var(--bg-elevated);
-  padding: var(--space-1) var(--space-2);
+  height: var(--control-height);
+  padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
+  font-size: 14px;
   color: var(--accent);
   min-width: 70px;
   text-align: center;
   border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .autoDetectButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  padding: var(--space-1) 10px;
+  height: var(--control-height);
+  padding: 0 12px;
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 150ms ease;

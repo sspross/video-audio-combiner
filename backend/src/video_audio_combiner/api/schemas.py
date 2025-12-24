@@ -108,3 +108,17 @@ class PreviewResponse(BaseModel):
 
     preview_path: str
     duration_seconds: float
+
+
+class FrameRequest(BaseModel):
+    """Request to extract a single frame from video."""
+
+    video_path: str
+    time_seconds: float
+
+
+class FrameResponse(BaseModel):
+    """Response containing extracted frame path."""
+
+    frame_path: str
+    time_seconds: float

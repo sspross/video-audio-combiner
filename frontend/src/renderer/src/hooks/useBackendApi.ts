@@ -6,7 +6,8 @@ import type {
   WaveformResponse,
   AlignResponse,
   MergeResponse,
-  PreviewResponse
+  PreviewResponse,
+  FrameResponse
 } from '../types'
 
 let apiClient: AxiosInstance | null = null
@@ -142,6 +143,18 @@ export function useBackendApi() {
     []
   )
 
+  const extractFrame = useCallback(
+    async (videoPath: string, timeSeconds: number): Promise<FrameResponse> => {
+      if (!apiClient) throw new Error('Backend not ready')
+      const response = await apiClient.post('/extract/frame', {
+        video_path: videoPath,
+        time_seconds: timeSeconds
+      })
+      return response.data
+    },
+    []
+  )
+
   return {
     isReady,
     error,
@@ -150,6 +163,7 @@ export function useBackendApi() {
     generateWaveform,
     detectAlignment,
     mergeAudio,
-    generatePreview
+    generatePreview,
+    extractFrame
   }
 }

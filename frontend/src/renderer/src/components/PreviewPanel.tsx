@@ -1,6 +1,7 @@
 import { Play, Loader2, Video } from 'lucide-react'
 import { VideoFramePreview } from './VideoFramePreview'
 import { useProjectStore } from '../stores/projectStore'
+import type { FrameResponse } from '../types'
 import styles from './PreviewPanel.module.css'
 
 interface PreviewPanelProps {
@@ -9,6 +10,7 @@ interface PreviewPanelProps {
   isGeneratingPreview: boolean
   onPreviewRequest: () => void
   onPreviewEnded: () => void
+  extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
 }
 
 function formatTime(ms: number): string {
@@ -24,7 +26,8 @@ export function PreviewPanel({
   previewVersion,
   isGeneratingPreview,
   onPreviewRequest,
-  onPreviewEnded
+  onPreviewEnded,
+  extractFrame
 }: PreviewPanelProps) {
   const store = useProjectStore()
   const hasWaveforms = store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0
@@ -41,6 +44,7 @@ export function PreviewPanel({
             previewVersion={previewVersion}
             isGeneratingPreview={isGeneratingPreview}
             onPreviewEnded={onPreviewEnded}
+            extractFrame={extractFrame}
           />
         ) : (
           <div className={styles.placeholder}>

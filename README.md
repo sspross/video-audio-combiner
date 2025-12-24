@@ -54,14 +54,12 @@ Start both backend and frontend in separate terminals:
 
 **Terminal 1 - Backend:**
 ```bash
-cd backend
-uv run uvicorn video_audio_combiner.main:app --reload --port 8000
+cd backend && uv run uvicorn video_audio_combiner.main:app --reload --port 8000
 ```
 
 **Terminal 2 - Frontend:**
 ```bash
-cd frontend
-npm run dev
+cd frontend && npm run dev
 ```
 
 The Electron app will start and automatically connect to the backend.

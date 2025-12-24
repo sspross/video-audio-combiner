@@ -8,6 +8,7 @@ from pathlib import Path
 from video_audio_combiner.api.schemas import (
     AudioTrack,
     ExtractResponse,
+    FrameResponse,
     MergeResponse,
     PreviewResponse,
     TracksResponse,
@@ -342,10 +343,64 @@ class FFmpegService:
             duration_seconds=duration_seconds,
         )
 
+    def extract_frame(self, video_path: str, time_seconds: float) -> FrameResponse:
+        """Extract a single frame from video at the specified time.
+
+        Args:
+            video_path: Path to the video file.
+            time_seconds: Time position in seconds.
+
+        Returns:
+            FrameResponse with path to the extracted frame image.
+
+        Raises:
+            FileNotFoundError: If the video file doesn't exist.
+            ValueError: If frame extraction fails.
+        """
+        video = Path(video_path)
+        if not video.exists():
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+
+        # Generate output path with timestamp to allow caching
+        # Use a hash of path + time to create unique filename
+        import hashlib
+
+        path_hash = hashlib.md5(f"{video_path}:{time_seconds}".encode()).hexdigest()[:12]
+        output_path = self.temp_dir / f"frame_{path_hash}.jpg"
+
+        # If frame already exists, return it (caching)
+        if output_path.exists():
+            return FrameResponse(frame_path=str(output_path), time_seconds=time_seconds)
+
+        # Extract frame using FFmpeg
+        # Use -ss before -i for fast seeking
+        cmd = [
+            "ffmpeg",
+            "-y",  # Overwrite output
+            "-ss",
+            str(max(0, time_seconds)),  # Seek to position
+            "-i",
+            str(video),
+            "-vframes",
+            "1",  # Extract only one frame
+            "-q:v",
+            "2",  # High quality JPEG (1-31, lower is better)
+            str(output_path),
+        ]
+
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as e:
+            raise ValueError(f"FFmpeg frame extraction failed: {e.stderr}") from e
+
+        return FrameResponse(frame_path=str(output_path), time_seconds=time_seconds)
+
     def cleanup_temp_files(self) -> None:
         """Remove all temporary files created by this service."""
         if self.temp_dir.exists():
             for file in self.temp_dir.glob("*.wav"):
                 file.unlink()
             for file in self.temp_dir.glob("*.mp4"):
+                file.unlink()
+            for file in self.temp_dir.glob("*.jpg"):
                 file.unlink()
