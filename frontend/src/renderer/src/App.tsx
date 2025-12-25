@@ -282,40 +282,6 @@ function App() {
       {/* Header */}
       <header className={styles.header}>
         <h1 className={styles.title}>Video Audio Combiner</h1>
-        <div className={styles.headerActions}>
-          <button className="secondary" onClick={handleReset} disabled={store.isLoading}>
-            <RotateCcw size={14} style={{ marginRight: 6 }} />
-            Reset
-          </button>
-          {exportStatus === 'idle' && (
-            <button
-              className="primary"
-              onClick={handleExport}
-              disabled={!(store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0 && !store.isLoading)}
-            >
-              <Download size={14} style={{ marginRight: 6 }} />
-              Export
-            </button>
-          )}
-          {exportStatus === 'exporting' && (
-            <button className="primary" disabled>
-              <Loader2 size={14} className={styles.spinner} style={{ marginRight: 6 }} />
-              Exporting...
-            </button>
-          )}
-          {exportStatus === 'success' && (
-            <button className="primary" onClick={() => setExportStatus('idle')}>
-              <CheckCircle size={14} style={{ marginRight: 6 }} />
-              Done!
-            </button>
-          )}
-          {exportStatus === 'error' && (
-            <button className="primary" onClick={() => setExportStatus('idle')} title={exportError || 'Export failed'}>
-              <AlertCircle size={14} style={{ marginRight: 6 }} />
-              Failed - Retry
-            </button>
-          )}
-        </div>
       </header>
 
       {/* Video Preview - takes available space */}
@@ -339,6 +305,11 @@ function App() {
           onSelectSecondaryFile={handleSelectSecondaryFile}
           onLoadMainFile={loadMainFile}
           onLoadSecondaryFile={loadSecondaryFile}
+          onReset={handleReset}
+          onExport={handleExport}
+          exportStatus={exportStatus}
+          exportError={exportError}
+          canExport={store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0 && !store.isLoading}
         />
       </div>
 

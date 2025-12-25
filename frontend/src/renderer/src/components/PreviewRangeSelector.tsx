@@ -145,8 +145,10 @@ export function PreviewRangeSelector({
         onMouseDown={handleDragStart}
         title="Drag to position preview range"
       />
-      {/* Duration label */}
-      <span className={styles.durationLabel}>{Math.round(durationSeconds)}s</span>
+      {/* Duration label - only visible when resizing */}
+      {isResizing && (
+        <span className={styles.durationLabel}>{Math.round(durationSeconds)}s</span>
+      )}
       {/* Right resize handle */}
       <div
         className={styles.resizeHandle}

@@ -1,16 +1,72 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, Wand2, Volume2, VolumeX, FolderOpen } from 'lucide-react'
+import { Loader2, Wand2, Volume2, VolumeX, FolderOpen, RotateCcw, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
 import { PreviewRangeSelector } from './PreviewRangeSelector'
 import { useProjectStore } from '../stores/projectStore'
 import styles from './AlignmentEditor.module.css'
 
+// Helper to calculate tick interval based on zoom level
+function getTickInterval(pixelsPerSecond: number): number {
+  const minPixelsBetweenTicks = 80
+  const secondsPerTick = minPixelsBetweenTicks / pixelsPerSecond
+  const niceIntervals = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600]
+  for (const interval of niceIntervals) {
+    if (interval >= secondsPerTick) return interval
+  }
+  return 600
+}
+
+// Timeline ruler component for showing time markers
+interface TimelineRulerProps {
+  duration: number
+  pixelsPerSecond: number
+  offsetPx: number
+  totalWidth: number
+}
+
+function TimelineRuler({ duration, pixelsPerSecond, offsetPx, totalWidth }: TimelineRulerProps) {
+  const majorInterval = getTickInterval(pixelsPerSecond)
+  const minorInterval = majorInterval / 5
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = Math.floor(seconds % 60)
+
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // Generate ticks
+  const ticks: { time: number; isMajor: boolean }[] = []
+  for (let t = 0; t <= duration; t += minorInterval) {
+    const isMajor = Math.abs(t % majorInterval) < 0.001 || Math.abs(t % majorInterval - majorInterval) < 0.001
+    ticks.push({ time: t, isMajor })
+  }
+
+  return (
+    <div className={styles.timelineRuler} style={{ width: totalWidth }}>
+      {ticks.map(({ time, isMajor }) => (
+        <div
+          key={time}
+          className={`${styles.tick} ${isMajor ? styles.majorTick : styles.minorTick}`}
+          style={{ left: offsetPx + time * pixelsPerSecond }}
+        >
+          <div className={styles.tickLine} />
+          {isMajor && <span className={styles.tickLabel}>{formatTime(time)}</span>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 interface TrackHeaderProps {
-  label: string
-  color: string
   filePath: string | null
   fileName: string | null
+  audioTrackName: string | null
   duration?: number
   isMuted: boolean
   onMuteToggle: () => void
@@ -23,10 +79,9 @@ function formatDuration(seconds: number): string {
 }
 
 function TrackHeader({
-  label,
-  color,
   filePath,
   fileName,
+  audioTrackName,
   duration,
   isMuted,
   onMuteToggle
@@ -36,15 +91,21 @@ function TrackHeader({
   return (
     <div className={styles.trackHeader}>
       <div className={styles.trackInfo}>
-        <span className={styles.colorDot} style={{ backgroundColor: color }} />
         <div className={styles.trackDetails}>
-          <span className={styles.labelText}>{label}</span>
           {hasFile ? (
-            <span className={styles.fileName} title={filePath}>
-              {fileName}
-            </span>
+            <>
+              <span className={styles.labelText} title={filePath}>
+                {fileName}
+              </span>
+              <span className={styles.fileName} title={audioTrackName || undefined}>
+                {audioTrackName || 'Audio'}
+              </span>
+            </>
           ) : (
-            <span className={styles.fileNamePlaceholder}>No file selected</span>
+            <>
+              <span className={styles.labelText}>No file selected</span>
+              <span className={styles.fileNamePlaceholder}>—</span>
+            </>
           )}
         </div>
       </div>
@@ -54,7 +115,6 @@ function TrackHeader({
         </span>
         <button
           className={`${styles.muteButton} ${isMuted ? styles.muted : ''} ${!hasFile ? styles.controlDisabled : ''}`}
-          style={{ '--btn-color': color } as React.CSSProperties}
           onClick={onMuteToggle}
           title={isMuted ? 'Unmute' : 'Mute'}
           disabled={!hasFile}
@@ -73,17 +133,41 @@ interface AlignmentEditorProps {
   onSelectSecondaryFile: () => void
   onLoadMainFile: (path: string) => void
   onLoadSecondaryFile: (path: string) => void
+  onReset: () => void
+  onExport: () => void
+  exportStatus: 'idle' | 'exporting' | 'success' | 'error'
+  exportError: string | null
+  canExport: boolean
 }
 
 export function AlignmentEditor({
   onAutoDetect,
-  isAutoDetecting
+  isAutoDetecting,
+  onReset,
+  onExport,
+  exportStatus,
+  exportError,
+  canExport
 }: AlignmentEditorProps) {
   const store = useProjectStore()
   const [zoom, setZoom] = useState(1)
+  const [showGrid, setShowGrid] = useState(false)
+  const [containerWidth, setContainerWidth] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const justFinishedDragging = useRef(false)
+
+  // Track scroll container width for minimum content width
+  useEffect(() => {
+    const updateWidth = () => {
+      if (scrollRef.current) {
+        setContainerWidth(scrollRef.current.clientWidth)
+      }
+    }
+    updateWidth()
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [])
 
   const hasMainFile = !!store.mainFilePath
   const hasSecondaryFile = !!store.secondaryFilePath
@@ -94,6 +178,20 @@ export function AlignmentEditor({
 
   const mainFileName = store.mainFilePath ? store.mainFilePath.split('/').pop() || null : null
   const secondaryFileName = store.secondaryFilePath ? store.secondaryFilePath.split('/').pop() || null : null
+
+  // Get audio track display names
+  const getTrackDisplayName = (track: { title?: string | null; language?: string | null; codec?: string; channels?: number } | undefined): string | null => {
+    if (!track) return null
+    const parts: string[] = []
+    if (track.title) parts.push(track.title)
+    else if (track.language) parts.push(track.language)
+    if (track.codec) parts.push(track.codec.toUpperCase())
+    if (track.channels) parts.push(`${track.channels}ch`)
+    return parts.length > 0 ? parts.join(' · ') : 'Audio'
+  }
+
+  const mainAudioTrackName = getTrackDisplayName(store.mainTracks[store.selectedMainTrackIndex])
+  const secondaryAudioTrackName = getTrackDisplayName(store.secondaryTracks[store.selectedSecondaryTrackIndex])
 
   // Downsample peaks for display
   const downsamplePeaks = useCallback((peaks: number[], targetLength: number): number[] => {
@@ -114,7 +212,11 @@ export function AlignmentEditor({
 
   // Calculate display values
   const pixelsPerPeak = 3
-  const maxPeaks = Math.floor(2000 * zoom)
+  const scrollPaddingPx = 100 // Extra space to scroll past edges
+  // Cap maxPeaks to prevent canvas from exceeding browser limits
+  // At 10x zoom: 2000 * 10 * 3 = 60000px
+  const maxCanvasWidth = 60000
+  const maxPeaks = Math.min(Math.floor(2000 * zoom), Math.floor(maxCanvasWidth / pixelsPerPeak))
   const displayMainPeaks = downsamplePeaks(store.mainPeaks, maxPeaks)
   const displaySecondaryPeaks = downsamplePeaks(store.secondaryPeaks, maxPeaks)
 
@@ -132,11 +234,14 @@ export function AlignmentEditor({
   const mainStartOffset = offsetPixels < 0 ? Math.abs(offsetPixels) : 0
   const secondaryStartOffset = offsetPixels > 0 ? offsetPixels : 0
 
-  // Total width calculation
+  // Total width calculation (including scroll padding on both sides)
+  // Ensure content is at least as wide as the container to fill the viewport
   const mainTotalWidth = mainStartOffset + displayMainPixelWidth
   const secondaryTotalWidth =
     secondaryStartOffset + displaySecondaryPeaks.length * pixelsPerPeak
-  const totalWidth = Math.max(mainTotalWidth, secondaryTotalWidth)
+  const contentWidth = Math.max(mainTotalWidth, secondaryTotalWidth)
+  const calculatedWidth = scrollPaddingPx + contentWidth + scrollPaddingPx
+  const totalWidth = Math.max(calculatedWidth, containerWidth)
 
   // Handle click on waveform area to center preview range
   const handleWaveformClick = useCallback(
@@ -152,8 +257,8 @@ export function AlignmentEditor({
       const rect = container.getBoundingClientRect()
       const clickX = e.clientX - rect.left + container.scrollLeft
 
-      // Account for mainStartOffset and convert to time
-      const clickTimeSeconds = (clickX - mainStartOffset) / pixelsPerSecond
+      // Account for scroll padding and mainStartOffset, then convert to time
+      const clickTimeSeconds = (clickX - scrollPaddingPx - mainStartOffset) / pixelsPerSecond
 
       // Center the preview range on the clicked position
       const halfDuration = store.previewDurationSeconds / 2
@@ -223,7 +328,7 @@ export function AlignmentEditor({
         const newPixelsPerSecond = mainDuration > 0 ? newDisplayWidth / mainDuration : 0
 
         const cursorPixels = (store.cursorPositionMs / 1000) * newPixelsPerSecond
-        const newScrollLeft = cursorPixels - containerWidth / 2
+        const newScrollLeft = scrollPaddingPx + cursorPixels - containerWidth / 2
         container.scrollLeft = newScrollLeft
       })
     },
@@ -242,8 +347,15 @@ export function AlignmentEditor({
       return (
         <div
           className={styles.waveformTrackWrapper}
-          style={{ marginLeft: mainStartOffset }}
+          style={{ marginLeft: scrollPaddingPx }}
         >
+          {/* Orange offset indicator when secondary starts earlier */}
+          {mainStartOffset > 0 && (
+            <div
+              className={styles.offsetIndicator}
+              style={{ width: mainStartOffset }}
+            />
+          )}
           <WaveformTrack
             peaks={displayMainPeaks}
             color="#4ade80"
@@ -261,8 +373,15 @@ export function AlignmentEditor({
       return (
         <div
           className={styles.waveformTrackWrapper}
-          style={{ marginLeft: secondaryStartOffset }}
+          style={{ marginLeft: scrollPaddingPx }}
         >
+          {/* Orange offset indicator at the beginning */}
+          {secondaryStartOffset > 0 && (
+            <div
+              className={styles.offsetIndicator}
+              style={{ width: secondaryStartOffset }}
+            />
+          )}
           <WaveformTrack
             peaks={displaySecondaryPeaks}
             color="#e94560"
@@ -283,20 +402,20 @@ export function AlignmentEditor({
       <div className={styles.mainContent}>
         {/* Track Headers Sidebar */}
         <div className={styles.headersSidebar}>
+          {/* Spacer to align with timeline ruler */}
+          <div className={styles.rulerSpacer} />
           <TrackHeader
-            label="Main Video"
-            color="#4ade80"
             filePath={store.mainFilePath}
             fileName={mainFileName}
+            audioTrackName={mainAudioTrackName}
             duration={mainDuration}
             isMuted={store.isMainAudioMuted}
             onMuteToggle={store.toggleMainAudioMute}
           />
           <TrackHeader
-            label="Audio Source"
-            color="#e94560"
             filePath={store.secondaryFilePath}
             fileName={secondaryFileName}
+            audioTrackName={secondaryAudioTrackName}
             duration={secondaryDuration}
             isMuted={store.isSecondaryAudioMuted}
             onMuteToggle={store.toggleSecondaryAudioMute}
@@ -318,7 +437,7 @@ export function AlignmentEditor({
                   startTimeMs={store.previewStartTimeMs}
                   durationSeconds={store.previewDurationSeconds}
                   pixelsPerSecond={pixelsPerSecond}
-                  baseOffset={mainStartOffset}
+                  baseOffset={scrollPaddingPx + mainStartOffset}
                   maxTimeMs={mainDuration * 1000}
                   onStartTimeChange={(ms) => {
                     store.setPreviewStartTime(ms)
@@ -332,8 +451,28 @@ export function AlignmentEditor({
                 <TimelineCursor
                   positionMs={store.cursorPositionMs}
                   pixelsPerSecond={pixelsPerSecond}
-                  baseOffset={mainStartOffset}
+                  baseOffset={scrollPaddingPx + mainStartOffset}
                 />
+
+                {/* Timeline Ruler */}
+                <TimelineRuler
+                  duration={mainDuration}
+                  pixelsPerSecond={pixelsPerSecond}
+                  offsetPx={scrollPaddingPx + mainStartOffset}
+                  totalWidth={totalWidth}
+                />
+
+                {/* Grid Overlay - single div with CSS gradient for performance */}
+                {showGrid && (
+                  <div
+                    className={styles.gridOverlay}
+                    style={{
+                      backgroundSize: `${getTickInterval(pixelsPerSecond) * pixelsPerSecond}px 100%`,
+                      backgroundPosition: `${scrollPaddingPx + mainStartOffset}px 0`,
+                      width: totalWidth
+                    }}
+                  />
+                )}
 
                 {/* Track waveforms stacked vertically */}
                 <div className={styles.tracksStack}>
@@ -369,7 +508,6 @@ export function AlignmentEditor({
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           <div className={`${styles.zoomControls} ${!hasWaveforms ? styles.disabled : ''}`}>
-            <span className={styles.zoomLabel}>Zoom:</span>
             <input
               type="range"
               min="0.1"
@@ -382,16 +520,20 @@ export function AlignmentEditor({
             />
             <span className={styles.zoomValue}>{zoom.toFixed(1)}x</span>
           </div>
+          <button
+            className={`${styles.gridToggle} ${showGrid ? styles.gridActive : ''} ${!hasWaveforms ? styles.disabled : ''}`}
+            onClick={() => setShowGrid(!showGrid)}
+            title="Toggle grid"
+            disabled={!hasWaveforms}
+          >
+            <Grid3X3 size={14} />
+          </button>
         </div>
 
         <div className={styles.toolbarCenter}>
-          <div className={`${styles.offsetDisplay} ${!hasWaveforms ? styles.disabled : ''}`}>
-            Offset:
-            <span className={styles.offsetValue}>
-              {store.offsetMs > 0 ? '+' : ''}
-              {store.offsetMs.toFixed(0)}ms
-            </span>
-          </div>
+          <span className={`${styles.offsetDisplay} ${!hasWaveforms ? styles.disabled : ''}`}>
+            {store.offsetMs > 0 ? '+' : ''}{store.offsetMs.toFixed(0)}ms
+          </span>
           <button
             className={styles.autoDetectButton}
             onClick={onAutoDetect}
@@ -407,18 +549,43 @@ export function AlignmentEditor({
           </button>
         </div>
 
-        <div className={`${styles.toolbarRight} ${!hasWaveforms ? styles.disabled : ''}`}>
-          <span className={styles.instruction}>
-            Click to position preview
-          </span>
-          <span className={styles.instruction}>
-            Drag edges to resize
-          </span>
-          <span className={styles.instruction}>
-            <span className={styles.kbd}>←</span>
-            <span className={styles.kbd}>→</span>
-            Fine-tune offset
-          </span>
+        <div className={styles.toolbarRight}>
+          <button
+            className={styles.resetButton}
+            onClick={onReset}
+            disabled={store.isLoading}
+          >
+            <RotateCcw size={14} />
+            Reset
+          </button>
+          {exportStatus === 'idle' && (
+            <button
+              className={styles.exportButton}
+              onClick={onExport}
+              disabled={!canExport}
+            >
+              <Download size={14} />
+              Export
+            </button>
+          )}
+          {exportStatus === 'exporting' && (
+            <button className={styles.exportButton} disabled>
+              <Loader2 size={14} className={styles.spinner} />
+              Exporting...
+            </button>
+          )}
+          {exportStatus === 'success' && (
+            <button className={styles.exportButtonSuccess} onClick={onExport}>
+              <CheckCircle size={14} />
+              Done!
+            </button>
+          )}
+          {exportStatus === 'error' && (
+            <button className={styles.exportButtonError} onClick={onExport} title={exportError || 'Export failed'}>
+              <AlertCircle size={14} />
+              Retry
+            </button>
+          )}
         </div>
       </div>
     </div>

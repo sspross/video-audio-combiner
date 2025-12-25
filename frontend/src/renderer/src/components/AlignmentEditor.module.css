@@ -24,6 +24,12 @@
   border-right: 1px solid var(--border);
 }
 
+.rulerSpacer {
+  height: 24px; /* Match timeline ruler height */
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
 .trackHeader {
   flex: 1;
   display: flex;
@@ -63,6 +69,9 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fileName {
@@ -111,9 +120,9 @@
   padding: 0;
   margin-left: auto;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--btn-color);
+  border: 1px solid rgba(91, 158, 229, 0.6);
   background-color: transparent;
-  color: var(--btn-color);
+  color: rgb(91, 158, 229);
   cursor: pointer;
   transition: all 150ms ease;
 }
@@ -123,13 +132,14 @@
 }
 
 .muteButton:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(91, 158, 229, 0.15);
+  border-color: rgb(91, 158, 229);
 }
 
 .muteButton.muted {
   opacity: 0.4;
-  border-color: var(--border);
-  color: var(--text-tertiary);
+  border-color: rgba(91, 158, 229, 0.3);
+  color: rgba(91, 158, 229, 0.5);
 }
 
 .muteButton.controlDisabled {
@@ -228,6 +238,67 @@
   cursor: crosshair;
 }
 
+/* Timeline Ruler */
+.timelineRuler {
+  position: relative;
+  height: 24px;
+  flex-shrink: 0;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tickLine {
+  width: 1px;
+  background-color: var(--border-emphasis);
+}
+
+.minorTick .tickLine {
+  height: 6px;
+  margin-top: auto;
+  opacity: 0.5;
+}
+
+.majorTick .tickLine {
+  height: 10px;
+  margin-top: auto;
+}
+
+.tickLabel {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.gridOverlay {
+  position: absolute;
+  top: 24px;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 5;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--border-emphasis) 0px,
+    var(--border-emphasis) 1px,
+    transparent 1px,
+    transparent 100%
+  );
+  opacity: 0.5;
+}
+
 /* Stacked tracks - for scrollable waveform view */
 .tracksStack {
   display: flex;
@@ -265,6 +336,13 @@
   align-items: center;
 }
 
+.offsetIndicator {
+  height: 100%;
+  background: rgba(255, 165, 0, 0.2);
+  border-right: 2px solid rgba(255, 165, 0, 0.6);
+  flex-shrink: 0;
+}
+
 /* Toolbar */
 .toolbar {
   display: flex;
@@ -281,7 +359,7 @@
 .toolbarRight {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-4);
 }
 
 .toolbarLeft {
@@ -291,31 +369,19 @@
 .toolbarRight {
   flex: 1;
   justify-content: flex-end;
-  gap: var(--space-4);
 }
 
 .offsetDisplay {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.offsetValue {
-  background-color: var(--bg-elevated);
-  height: var(--control-height);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
+  height: 28px;
   font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--accent);
-  min-width: 70px;
-  text-align: center;
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 13px;
+  color: #ffa500;
+  background: var(--bg-surface);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 165, 0, 0.4);
 }
 
 .autoDetectButton {
@@ -323,26 +389,115 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  height: var(--control-height);
-  padding: 0 12px;
+  background: rgb(255, 165, 0);
+  border: none;
+  height: 28px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bg-deep);
   cursor: pointer;
   transition: all 150ms ease;
 }
 
 .autoDetectButton:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg-deep);
+  background: rgb(255, 180, 50);
+  border-color: rgb(255, 180, 50);
 }
 
 .autoDetectButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.resetButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.resetButton:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.resetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: var(--success);
+  border: none;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bg-deep);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.exportButton:hover:not(:disabled) {
+  background: #5ee090;
+}
+
+.exportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exportButtonSuccess {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: var(--success);
+  border: none;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bg-deep);
+  cursor: pointer;
+}
+
+.exportButtonError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: var(--error);
+  border: none;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
 }
 
 .zoomControls {
@@ -386,6 +541,39 @@
   font-family: var(--font-mono);
 }
 
+.gridToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  height: 28px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.gridToggle:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.gridToggle.gridActive {
+  background: var(--bg-elevated);
+  border-color: var(--text-tertiary);
+  color: var(--text-primary);
+}
+
+.gridToggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .instruction {
   display: flex;
   align-items: center;
@@ -406,7 +594,7 @@
 }
 
 .spinner {
-  color: var(--accent);
+  color: var(--bg-deep);
   animation: spin 1s linear infinite;
 }
 

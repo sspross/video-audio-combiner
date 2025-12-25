@@ -166,7 +166,6 @@ export function SetupWizard({
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Setup Your Project</h2>
           {currentStep !== 'analyzing' && (
             <button className={styles.closeButton} onClick={handleClose} title="Close">
               <X size={20} />
