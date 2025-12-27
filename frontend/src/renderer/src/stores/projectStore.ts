@@ -1,5 +1,12 @@
 import { create } from 'zustand'
-import type { AnalysisStep, AudioTrack, ProjectState, SetupWizardStep, WorkflowStep } from '../types'
+import type {
+  AlignmentDetectionStep,
+  AnalysisStep,
+  AudioTrack,
+  ProjectState,
+  SetupWizardStep,
+  WorkflowStep
+} from '../types'
 
 interface ProjectActions {
   setMainFile: (path: string, tracks: AudioTrack[]) => void
@@ -12,6 +19,7 @@ interface ProjectActions {
   setSecondaryPeaks: (peaks: number[]) => void
   setMainAnalysisStep: (step: AnalysisStep) => void
   setSecondaryAnalysisStep: (step: AnalysisStep) => void
+  setAlignmentDetectionStep: (step: AlignmentDetectionStep) => void
   setOffset: (offsetMs: number) => void
   setConfidence: (confidence: number) => void
   setCurrentStep: (step: WorkflowStep) => void
@@ -44,6 +52,7 @@ const initialState: ProjectState = {
   secondaryPeaks: [],
   mainAnalysisStep: 'idle',
   secondaryAnalysisStep: 'idle',
+  alignmentDetectionStep: 'idle',
   offsetMs: 0,
   confidence: 0,
   currentStep: 'select-files',
@@ -57,7 +66,7 @@ const initialState: ProjectState = {
   previewDurationSeconds: 15,
   // Setup wizard state
   showSetupWizard: true,
-  setupWizardStep: 'main-video'
+  setupWizardStep: 'files'
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
@@ -70,7 +79,10 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
       selectedMainTrackIndex: 0,
       mainWavPath: null,
       mainPeaks: [],
-      mainAnalysisStep: 'idle'
+      mainAnalysisStep: 'idle',
+      alignmentDetectionStep: 'idle',
+      offsetMs: 0,
+      confidence: 0
     }),
 
   setSecondaryFile: (path, tracks) =>
@@ -80,7 +92,10 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
       selectedSecondaryTrackIndex: 0,
       secondaryWavPath: null,
       secondaryPeaks: [],
-      secondaryAnalysisStep: 'idle'
+      secondaryAnalysisStep: 'idle',
+      alignmentDetectionStep: 'idle',
+      offsetMs: 0,
+      confidence: 0
     }),
 
   setSelectedMainTrack: (index) => set({ selectedMainTrackIndex: index }),
@@ -91,6 +106,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   setSecondaryPeaks: (peaks) => set({ secondaryPeaks: peaks }),
   setMainAnalysisStep: (step) => set({ mainAnalysisStep: step }),
   setSecondaryAnalysisStep: (step) => set({ secondaryAnalysisStep: step }),
+  setAlignmentDetectionStep: (step) => set({ alignmentDetectionStep: step }),
   setOffset: (offsetMs) => set({ offsetMs }),
   setConfidence: (confidence) => set({ confidence }),
   setCurrentStep: (step) => set({ currentStep: step }),

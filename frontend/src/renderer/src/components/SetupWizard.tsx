@@ -1,7 +1,8 @@
-import { useCallback, useState, useEffect } from 'react'
-import { Upload, FolderOpen, ChevronRight, X, Film, Music, Check, Loader2 } from 'lucide-react'
+import { useCallback, useState, useEffect, useRef } from 'react'
+import { Upload, ChevronRight, Film, Check, Loader2, X, Volume2, Circle, AlertCircle } from 'lucide-react'
 import { useProjectStore } from '../stores/projectStore'
-import type { AudioTrack, AnalysisStep } from '../types'
+import { useBackendApi } from '../hooks/useBackendApi'
+import type { AudioTrack } from '../types'
 import styles from './SetupWizard.module.css'
 
 interface SetupWizardProps {
@@ -11,58 +12,17 @@ interface SetupWizardProps {
   onLoadSecondaryFile: (path: string) => void
 }
 
-function formatTrackLabel(track: AudioTrack): string {
-  const parts = [`Track ${track.index + 1}`]
-  if (track.language) parts.push(track.language)
-  parts.push(track.codec)
-  parts.push(`${track.channels}ch`)
-  if (track.title) parts.push(`- ${track.title}`)
-  return parts.join(' • ')
-}
-
-interface AnalysisProgressProps {
-  label: string
-  color: string
-  step: AnalysisStep
-  hasPeaks: boolean
-}
-
-function AnalysisProgress({ label, color, step, hasPeaks }: AnalysisProgressProps) {
-  const isComplete = hasPeaks
-  const isActive = step !== 'idle' && step !== 'pending' && !isComplete
-
-  const getStatusText = () => {
-    if (isComplete) return 'Complete'
-    if (step === 'extracting') return 'Extracting audio...'
-    if (step === 'waveform') return 'Generating waveform...'
-    return 'Waiting...'
+function formatTrackInfo(track: AudioTrack): { header: string; description: string } {
+  const header = track.title || `Track ${track.index + 1}`
+  const descParts: string[] = []
+  if (track.language) descParts.push(track.language)
+  descParts.push(track.codec)
+  descParts.push(`${track.channels}ch`)
+  if (!track.title) descParts.unshift(`Track ${track.index + 1}`)
+  return {
+    header,
+    description: descParts.join(' • ')
   }
-
-  return (
-    <div className={styles.analysisItem}>
-      <div className={styles.analysisHeader}>
-        <span className={styles.colorDot} style={{ backgroundColor: color }} />
-        <span className={styles.analysisLabel}>{label}</span>
-        {isComplete ? (
-          <Check size={16} className={styles.checkIcon} />
-        ) : isActive ? (
-          <Loader2 size={16} className={styles.spinnerIcon} />
-        ) : null}
-      </div>
-      <div className={styles.analysisStatus}>
-        <span className={`${styles.statusText} ${isComplete ? styles.complete : ''}`}>
-          {getStatusText()}
-        </span>
-      </div>
-      {isActive && (
-        <div className={styles.progressBarContainer}>
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} />
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 export function SetupWizard({
@@ -72,52 +32,77 @@ export function SetupWizard({
   onLoadSecondaryFile
 }: SetupWizardProps) {
   const store = useProjectStore()
-  const [isDragOver, setIsDragOver] = useState(false)
+  const api = useBackendApi()
+  const [isDragOverMain, setIsDragOverMain] = useState(false)
+  const [isDragOverSecondary, setIsDragOverSecondary] = useState(false)
+  const alignmentTriggeredRef = useRef(false)
 
   const currentStep = store.setupWizardStep
+  const hasMainPeaks = store.mainPeaks.length > 0
+  const hasSecondaryPeaks = store.secondaryPeaks.length > 0
 
-  // Auto-close wizard when both waveforms are ready
+  // Trigger alignment detection when both waveforms are ready
   useEffect(() => {
-    if (currentStep === 'analyzing') {
-      const hasMainPeaks = store.mainPeaks.length > 0
-      const hasSecondaryPeaks = store.secondaryPeaks.length > 0
-      if (hasMainPeaks && hasSecondaryPeaks) {
-        store.setShowSetupWizard(false)
-      }
+    if (
+      currentStep === 'analyzing' &&
+      hasMainPeaks &&
+      hasSecondaryPeaks &&
+      store.alignmentDetectionStep === 'idle' &&
+      store.mainWavPath &&
+      store.secondaryWavPath &&
+      api.isReady &&
+      !alignmentTriggeredRef.current
+    ) {
+      alignmentTriggeredRef.current = true
+      store.setAlignmentDetectionStep('detecting')
+      api
+        .detectAlignment(store.mainWavPath, store.secondaryWavPath)
+        .then((result) => {
+          store.setOffset(result.offset_ms)
+          store.setConfidence(result.confidence)
+          store.setAlignmentDetectionStep('done')
+        })
+        .catch((err) => {
+          store.setError(err instanceof Error ? err.message : 'Alignment detection failed')
+          store.setAlignmentDetectionStep('error')
+        })
     }
-  }, [currentStep, store.mainPeaks.length, store.secondaryPeaks.length, store])
+  }, [
+    currentStep,
+    hasMainPeaks,
+    hasSecondaryPeaks,
+    store.alignmentDetectionStep,
+    store.mainWavPath,
+    store.secondaryWavPath,
+    api.isReady,
+    api,
+    store
+  ])
 
-  const handleClose = useCallback(() => {
-    // Don't allow closing during analysis
-    if (currentStep === 'analyzing') return
-    store.setShowSetupWizard(false)
-  }, [currentStep, store])
+  // Reset alignment triggered ref when going back
+  useEffect(() => {
+    if (currentStep !== 'analyzing') {
+      alignmentTriggeredRef.current = false
+    }
+  }, [currentStep])
 
   const handleBack = useCallback(() => {
-    if (currentStep === 'audio-source') {
-      store.setSetupWizardStep('main-video')
-    } else if (currentStep === 'track-selection') {
-      store.setSetupWizardStep('audio-source')
+    if (currentStep === 'track-selection') {
+      store.setSetupWizardStep('files')
+    } else if (currentStep === 'analyzing') {
+      // Go back to track selection and reset analysis state
+      store.setMainAnalysisStep('pending')
+      store.setSecondaryAnalysisStep('pending')
+      store.setAlignmentDetectionStep('idle')
+      store.setSetupWizardStep('track-selection')
     }
   }, [currentStep, store])
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(false)
-  }, [])
-
   const handleDrop = useCallback(
-    (e: React.DragEvent, onLoad: (path: string) => void) => {
+    (e: React.DragEvent, onLoad: (path: string) => void, setDragOver: (v: boolean) => void) => {
       e.preventDefault()
       e.stopPropagation()
-      setIsDragOver(false)
+      setDragOver(false)
 
       const files = e.dataTransfer.files
       if (files.length > 0) {
@@ -138,6 +123,14 @@ export function SetupWizard({
     await onSelectSecondaryFile()
   }, [onSelectSecondaryFile])
 
+  const handleClearMainFile = useCallback(() => {
+    store.setMainFile('', [])
+  }, [store])
+
+  const handleClearSecondaryFile = useCallback(() => {
+    store.setSecondaryFile('', [])
+  }, [store])
+
   const handleStartAnalysis = useCallback(() => {
     store.setSetupWizardStep('analyzing')
     store.setMainAnalysisStep('extracting')
@@ -149,183 +142,176 @@ export function SetupWizard({
   const hasSecondaryFile = !!store.secondaryFilePath
   const hasMainTracks = store.mainTracks.length > 0
   const hasSecondaryTracks = store.secondaryTracks.length > 0
-  const hasMainPeaks = store.mainPeaks.length > 0
-  const hasSecondaryPeaks = store.secondaryPeaks.length > 0
 
   // Auto-advance logic
-  const canProceedFromMain = hasMainFile && hasMainTracks
-  const canProceedFromSecondary = hasSecondaryFile && hasSecondaryTracks
+  const canProceedFromFiles = hasMainFile && hasMainTracks && hasSecondaryFile && hasSecondaryTracks
+
+  // Task completion states for analyze step
+  const extractDone =
+    store.mainAnalysisStep !== 'extracting' &&
+    store.secondaryAnalysisStep !== 'extracting' &&
+    (store.mainAnalysisStep === 'waveform' ||
+      store.mainAnalysisStep === 'idle' ||
+      hasMainPeaks) &&
+    (store.secondaryAnalysisStep === 'waveform' ||
+      store.secondaryAnalysisStep === 'idle' ||
+      hasSecondaryPeaks)
+  const waveformDone = hasMainPeaks && hasSecondaryPeaks
+  const alignmentDone =
+    store.alignmentDetectionStep === 'done' || store.alignmentDetectionStep === 'error'
+  const alignmentFailed = store.alignmentDetectionStep === 'error'
+  const allAnalysisDone = waveformDone && alignmentDone
 
   // Determine step states for indicators
-  const isStep1Complete = hasMainFile
-  const isStep2Complete = hasSecondaryFile
-  const isStep3Complete = currentStep === 'analyzing' || (hasMainPeaks && hasSecondaryPeaks)
-  const isStep4Complete = hasMainPeaks && hasSecondaryPeaks
+  const isFilesComplete = hasMainFile && hasSecondaryFile
+  const isTracksComplete = currentStep === 'analyzing' || allAnalysisDone
+  const isAnalyzeComplete = allAnalysisDone
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <div className={styles.header}>
-          {currentStep !== 'analyzing' && (
-            <button className={styles.closeButton} onClick={handleClose} title="Close">
-              <X size={20} />
-            </button>
-          )}
-        </div>
-
         {/* Step indicators */}
         <div className={styles.steps}>
           <div
-            className={`${styles.step} ${currentStep === 'main-video' ? styles.active : ''} ${isStep1Complete ? styles.completed : ''}`}
+            className={`${styles.step} ${currentStep === 'files' ? styles.active : ''} ${isFilesComplete ? styles.completed : ''}`}
           >
-            <span className={styles.stepNumber}>
-              {isStep1Complete ? <Check size={12} /> : '1'}
-            </span>
-            <span className={styles.stepLabel}>Main Video</span>
+            <span className={styles.stepLabel}>Files</span>
           </div>
           <ChevronRight size={16} className={styles.stepArrow} />
           <div
-            className={`${styles.step} ${currentStep === 'audio-source' ? styles.active : ''} ${isStep2Complete ? styles.completed : ''}`}
+            className={`${styles.step} ${currentStep === 'track-selection' ? styles.active : ''} ${isTracksComplete ? styles.completed : ''}`}
           >
-            <span className={styles.stepNumber}>
-              {isStep2Complete ? <Check size={12} /> : '2'}
-            </span>
-            <span className={styles.stepLabel}>Audio Source</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div
-            className={`${styles.step} ${currentStep === 'track-selection' ? styles.active : ''} ${isStep3Complete ? styles.completed : ''}`}
-          >
-            <span className={styles.stepNumber}>
-              {isStep3Complete ? <Check size={12} /> : '3'}
-            </span>
             <span className={styles.stepLabel}>Tracks</span>
           </div>
           <ChevronRight size={16} className={styles.stepArrow} />
           <div
-            className={`${styles.step} ${currentStep === 'analyzing' ? styles.active : ''} ${isStep4Complete ? styles.completed : ''}`}
+            className={`${styles.step} ${currentStep === 'analyzing' ? styles.active : ''} ${isAnalyzeComplete ? styles.completed : ''}`}
           >
-            <span className={styles.stepNumber}>
-              {isStep4Complete ? <Check size={12} /> : '4'}
-            </span>
             <span className={styles.stepLabel}>Analyze</span>
           </div>
         </div>
 
         {/* Content */}
         <div className={styles.content}>
-          {currentStep === 'main-video' && (
+          {currentStep === 'files' && (
             <div className={styles.stepContent}>
-              <Film size={48} className={styles.icon} />
-              <h3 className={styles.stepTitle}>Select Main Video</h3>
-              <p className={styles.stepDescription}>
-                Choose the video you want to add audio to.
-                <br />
-                The new audio track will be merged into this file.
-              </p>
-              {hasMainFile ? (
-                <div className={styles.selectedFile}>
-                  <Check size={16} className={styles.checkIcon} />
-                  <span className={styles.fileName}>
-                    {store.mainFilePath?.split('/').pop()}
-                  </span>
+              <div className={styles.fileSelectors}>
+                {/* Main Video */}
+                <div className={styles.fileSelector}>
+                  <div className={styles.fileSelectorHeader}>
+                    <Film size={20} className={styles.fileSelectorIcon} />
+                    <span className={styles.fileSelectorLabel}>Main Video</span>
+                  </div>
+                  {hasMainFile ? (
+                    <div className={styles.selectedFile}>
+                      <span className={styles.fileName}>
+                        {store.mainFilePath?.split('/').pop()}
+                      </span>
+                      <button className={styles.removeButton} onClick={handleClearMainFile}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`${styles.dropZone} ${isDragOverMain ? styles.dragOver : ''}`}
+                      onClick={handleMainFileSelect}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOverMain(true) }}
+                      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOverMain(false) }}
+                      onDrop={(e) => handleDrop(e, onLoadMainFile, setIsDragOverMain)}
+                    >
+                      <Upload size={20} className={styles.uploadIcon} />
+                      <span className={styles.dropZoneText}>Browse</span>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div
-                  className={`${styles.dropZone} ${isDragOver ? styles.dragOver : ''}`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, onLoadMainFile)}
-                >
-                  <Upload size={24} className={styles.uploadIcon} />
-                  <span>Drag & drop video file here</span>
-                  <span className={styles.orText}>or</span>
-                  <button className={styles.browseButton} onClick={handleMainFileSelect}>
-                    <FolderOpen size={14} />
-                    Browse Files
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
-          {currentStep === 'audio-source' && (
-            <div className={styles.stepContent}>
-              <Music size={48} className={styles.icon} />
-              <h3 className={styles.stepTitle}>Select Audio Source</h3>
-              <p className={styles.stepDescription}>
-                Choose the video with the audio you want to add.
-                <br />
-                This audio will be extracted and merged.
-              </p>
-              {hasSecondaryFile ? (
-                <div className={styles.selectedFile}>
-                  <Check size={16} className={styles.checkIcon} />
-                  <span className={styles.fileName}>
-                    {store.secondaryFilePath?.split('/').pop()}
-                  </span>
+                {/* Second Video */}
+                <div className={styles.fileSelector}>
+                  <div className={styles.fileSelectorHeader}>
+                    <Film size={20} className={styles.fileSelectorIcon} />
+                    <span className={styles.fileSelectorLabel}>Second Video</span>
+                  </div>
+                  {hasSecondaryFile ? (
+                    <div className={styles.selectedFile}>
+                      <span className={styles.fileName}>
+                        {store.secondaryFilePath?.split('/').pop()}
+                      </span>
+                      <button className={styles.removeButton} onClick={handleClearSecondaryFile}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`${styles.dropZone} ${isDragOverSecondary ? styles.dragOver : ''}`}
+                      onClick={handleSecondaryFileSelect}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOverSecondary(true) }}
+                      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOverSecondary(false) }}
+                      onDrop={(e) => handleDrop(e, onLoadSecondaryFile, setIsDragOverSecondary)}
+                    >
+                      <Upload size={20} className={styles.uploadIcon} />
+                      <span className={styles.dropZoneText}>Browse</span>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div
-                  className={`${styles.dropZone} ${isDragOver ? styles.dragOver : ''}`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, onLoadSecondaryFile)}
-                >
-                  <Upload size={24} className={styles.uploadIcon} />
-                  <span>Drag & drop video file here</span>
-                  <span className={styles.orText}>or</span>
-                  <button className={styles.browseButton} onClick={handleSecondaryFileSelect}>
-                    <FolderOpen size={14} />
-                    Browse Files
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
           )}
 
           {currentStep === 'track-selection' && (
             <div className={styles.stepContent}>
-              <h3 className={styles.stepTitle}>Select Audio Tracks</h3>
-              <p className={styles.stepDescription}>
-                Choose which audio tracks to use from each file.
-              </p>
-
               <div className={styles.trackSelectors}>
                 <div className={styles.trackSelector}>
-                  <label className={styles.trackSelectorLabel}>
-                    <span className={styles.colorDot} style={{ backgroundColor: '#4ade80' }} />
-                    Main Video Audio:
-                  </label>
-                  <select
-                    className={styles.trackDropdown}
-                    value={store.selectedMainTrackIndex}
-                    onChange={(e) => store.setSelectedMainTrack(Number(e.target.value))}
-                  >
-                    {store.mainTracks.map((track) => (
-                      <option key={track.index} value={track.index}>
-                        {formatTrackLabel(track)}
-                      </option>
-                    ))}
-                  </select>
+                  <div className={styles.fileSelectorHeader}>
+                    <Volume2 size={20} className={styles.fileSelectorIcon} />
+                    <span className={styles.fileSelectorLabel}>Main Video Audio</span>
+                  </div>
+                  <div className={styles.trackTiles}>
+                    {store.mainTracks.map((track) => {
+                      const info = formatTrackInfo(track)
+                      return (
+                        <button
+                          key={track.index}
+                          className={`${styles.trackTile} ${store.selectedMainTrackIndex === track.index ? styles.trackTileSelected : ''}`}
+                          onClick={() => store.setSelectedMainTrack(track.index)}
+                        >
+                          <span className={styles.radioButton}>
+                            {store.selectedMainTrackIndex === track.index && <span className={styles.radioButtonDot} />}
+                          </span>
+                          <span className={styles.trackTileContent}>
+                            <span className={styles.trackTileHeader}>{info.header}</span>
+                            <span className={styles.trackTileDescription}>{info.description}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <div className={styles.trackSelector}>
-                  <label className={styles.trackSelectorLabel}>
-                    <span className={styles.colorDot} style={{ backgroundColor: '#e94560' }} />
-                    Audio Source:
-                  </label>
-                  <select
-                    className={styles.trackDropdown}
-                    value={store.selectedSecondaryTrackIndex}
-                    onChange={(e) => store.setSelectedSecondaryTrack(Number(e.target.value))}
-                  >
-                    {store.secondaryTracks.map((track) => (
-                      <option key={track.index} value={track.index}>
-                        {formatTrackLabel(track)}
-                      </option>
-                    ))}
-                  </select>
+                  <div className={styles.fileSelectorHeader}>
+                    <Volume2 size={20} className={styles.fileSelectorIcon} />
+                    <span className={styles.fileSelectorLabel}>Second Video Audio</span>
+                  </div>
+                  <div className={styles.trackTiles}>
+                    {store.secondaryTracks.map((track) => {
+                      const info = formatTrackInfo(track)
+                      return (
+                        <button
+                          key={track.index}
+                          className={`${styles.trackTile} ${store.selectedSecondaryTrackIndex === track.index ? styles.trackTileSelected : ''}`}
+                          onClick={() => store.setSelectedSecondaryTrack(track.index)}
+                        >
+                          <span className={styles.radioButton}>
+                            {store.selectedSecondaryTrackIndex === track.index && <span className={styles.radioButtonDot} />}
+                          </span>
+                          <span className={styles.trackTileContent}>
+                            <span className={styles.trackTileHeader}>{info.header}</span>
+                            <span className={styles.trackTileDescription}>{info.description}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -333,24 +319,52 @@ export function SetupWizard({
 
           {currentStep === 'analyzing' && (
             <div className={styles.stepContent}>
-              <h3 className={styles.stepTitle}>Analyzing Audio</h3>
-              <p className={styles.stepDescription}>
-                Extracting and analyzing audio tracks...
-              </p>
+              <div className={styles.analyzeContent}>
+                {/* Spinner or Success Icon */}
+                <div className={styles.spinnerContainer}>
+                  {allAnalysisDone ? (
+                    <Check size={48} className={styles.successIcon} />
+                  ) : (
+                    <Loader2 size={48} className={styles.mainSpinner} />
+                  )}
+                </div>
 
-              <div className={styles.analysisContainer}>
-                <AnalysisProgress
-                  label="Main Video"
-                  color="#4ade80"
-                  step={store.mainAnalysisStep}
-                  hasPeaks={hasMainPeaks}
-                />
-                <AnalysisProgress
-                  label="Audio Source"
-                  color="#e94560"
-                  step={store.secondaryAnalysisStep}
-                  hasPeaks={hasSecondaryPeaks}
-                />
+                {/* Task List */}
+                <ul className={styles.taskList}>
+                  <li className={`${styles.taskItem} ${extractDone ? styles.completed : ''}`}>
+                    {extractDone ? (
+                      <Check size={18} className={styles.taskCheckIcon} />
+                    ) : (
+                      <Circle size={18} className={styles.taskPendingIcon} />
+                    )}
+                    <span>Extracting audio</span>
+                  </li>
+                  <li className={`${styles.taskItem} ${waveformDone ? styles.completed : ''}`}>
+                    {waveformDone ? (
+                      <Check size={18} className={styles.taskCheckIcon} />
+                    ) : (
+                      <Circle size={18} className={styles.taskPendingIcon} />
+                    )}
+                    <span>Generating waveforms</span>
+                  </li>
+                  <li
+                    className={`${styles.taskItem} ${alignmentDone ? styles.completed : ''} ${alignmentFailed ? styles.failed : ''}`}
+                  >
+                    {alignmentDone ? (
+                      alignmentFailed ? (
+                        <AlertCircle size={18} className={styles.taskErrorIcon} />
+                      ) : (
+                        <Check size={18} className={styles.taskCheckIcon} />
+                      )
+                    ) : (
+                      <Circle size={18} className={styles.taskPendingIcon} />
+                    )}
+                    <span>
+                      Detecting audio wave offset
+                      {alignmentFailed && ' (failed)'}
+                    </span>
+                  </li>
+                </ul>
               </div>
             </div>
           )}
@@ -358,39 +372,34 @@ export function SetupWizard({
 
         {/* Footer */}
         <div className={styles.footer}>
-          {currentStep !== 'main-video' && currentStep !== 'analyzing' && (
+          {(currentStep === 'track-selection' || currentStep === 'analyzing') && (
             <button className={styles.backButton} onClick={handleBack}>
               Back
             </button>
           )}
           <div className={styles.spacer} />
-          {currentStep === 'main-video' && (
-            <button
-              className={styles.continueButton}
-              onClick={() => store.setSetupWizardStep('audio-source')}
-              disabled={!canProceedFromMain}
-            >
-              Continue
-            </button>
-          )}
-          {currentStep === 'audio-source' && (
+          {currentStep === 'files' && (
             <button
               className={styles.continueButton}
               onClick={() => store.setSetupWizardStep('track-selection')}
-              disabled={!canProceedFromSecondary}
+              disabled={!canProceedFromFiles}
             >
               Continue
             </button>
           )}
           {currentStep === 'track-selection' && (
-            <button className={styles.startButton} onClick={handleStartAnalysis}>
-              Start Analysis
+            <button className={styles.continueButton} onClick={handleStartAnalysis}>
+              Continue
             </button>
           )}
           {currentStep === 'analyzing' && (
-            <div className={styles.analyzingHint}>
-              Please wait while audio is being analyzed...
-            </div>
+            <button
+              className={styles.continueButton}
+              onClick={() => store.setShowSetupWizard(false)}
+              disabled={!allAnalysisDone}
+            >
+              Continue
+            </button>
           )}
         </div>
       </div>

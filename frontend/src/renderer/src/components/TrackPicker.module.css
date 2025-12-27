@@ -11,9 +11,10 @@
   color: var(--text-primary);
   height: var(--control-height);
   padding: 0 12px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-family: var(--font-sans);
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: border-color 150ms ease;
 }
@@ -25,11 +26,10 @@
 .select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(72, 213, 151, 0.15);
 }
 
 .compact .select {
   height: 28px;
   padding: 0 10px;
-  font-size: 12px;
+  font-size: 11px;
 }

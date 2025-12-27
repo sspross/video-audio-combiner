@@ -55,7 +55,9 @@ export type WorkflowStep =
 
 export type AnalysisStep = 'idle' | 'pending' | 'extracting' | 'waveform'
 
-export type SetupWizardStep = 'main-video' | 'audio-source' | 'track-selection' | 'analyzing'
+export type AlignmentDetectionStep = 'idle' | 'detecting' | 'done' | 'error'
+
+export type SetupWizardStep = 'files' | 'track-selection' | 'analyzing'
 
 export interface ProjectState {
   mainFilePath: string | null
@@ -70,6 +72,7 @@ export interface ProjectState {
   secondaryPeaks: number[]
   mainAnalysisStep: AnalysisStep
   secondaryAnalysisStep: AnalysisStep
+  alignmentDetectionStep: AlignmentDetectionStep
   offsetMs: number
   confidence: number
   currentStep: WorkflowStep

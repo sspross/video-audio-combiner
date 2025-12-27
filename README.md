@@ -2,6 +2,17 @@
 
 Desktop tool to merge audio tracks from different video sources with automatic audio synchronization via waveform analysis.
 
+```
+┌──────────┐
+│ Movie    │        ┌─────────────┐        ┌──────────┐
+│ [EN] ~~~ │─┐      │  [EN] ~|~   │        │  Movie   │
+└──────────┘ ├─────►│  [DE] ~|~   │───────►│ [EN] ~~~ │
+┌──────────┐ │      │  ← ALIGN →  │        │ [DE] ~~~ │
+│ Movie    │ │      └─────────────┘        └──────────┘
+│ [DE] ~~~ │─┘
+└──────────┘
+```
+
 ## Prerequisites
 
 - Python 3.11+

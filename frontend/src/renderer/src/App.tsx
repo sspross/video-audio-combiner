@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { Loader2, RotateCcw, AlertCircle, Download, CheckCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
 import { SetupWizard } from './components/SetupWizard'
@@ -141,42 +141,6 @@ function App() {
 
     analyzeSecondary()
   }, [store.secondaryFilePath, store.selectedSecondaryTrackIndex, store.secondaryAnalysisStep, api.isReady])
-
-  // Auto-advance wizard steps when files are loaded
-  useEffect(() => {
-    if (!store.showSetupWizard) return
-
-    // When main file is loaded and we're on step 1, advance to step 2
-    if (store.setupWizardStep === 'main-video' && store.mainFilePath && store.mainTracks.length > 0) {
-      store.setSetupWizardStep('audio-source')
-    }
-    // When secondary file is loaded and we're on step 2, advance to step 3
-    else if (store.setupWizardStep === 'audio-source' && store.secondaryFilePath && store.secondaryTracks.length > 0) {
-      store.setSetupWizardStep('track-selection')
-    }
-  }, [store.showSetupWizard, store.setupWizardStep, store.mainFilePath, store.mainTracks.length, store.secondaryFilePath, store.secondaryTracks.length])
-
-  // Auto-detect alignment when both waveforms are ready
-  useEffect(() => {
-    const detectAlignment = async () => {
-      if (!store.mainWavPath || !store.secondaryWavPath || !api.isReady) return
-      if (store.mainPeaks.length === 0 || store.secondaryPeaks.length === 0) return
-      if (store.offsetMs !== 0 || store.confidence !== 0) return // Already aligned
-
-      setIsAutoDetecting(true)
-      try {
-        const alignment = await api.detectAlignment(store.mainWavPath, store.secondaryWavPath)
-        store.setOffset(alignment.offset_ms)
-        store.setConfidence(alignment.confidence)
-      } catch (err) {
-        store.setError(err instanceof Error ? err.message : 'Alignment detection failed')
-      } finally {
-        setIsAutoDetecting(false)
-      }
-    }
-
-    detectAlignment()
-  }, [store.mainWavPath, store.secondaryWavPath, store.mainPeaks.length, store.secondaryPeaks.length, api.isReady])
 
   const handleAutoDetect = useCallback(async () => {
     if (!store.mainWavPath || !store.secondaryWavPath || !api.isReady) return

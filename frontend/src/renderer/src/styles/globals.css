@@ -51,10 +51,18 @@
   --space-6: 32px;
 
   /* Radii */
+  --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-full: 999px;
+
+  /* Oxide Typography */
+  --letter-spacing-label: 0.1em;
+  --letter-spacing-header: 0.12em;
+
+  /* Oxide Borders */
+  --border-accent-width: 2px;
 
   /* Control sizes */
   --control-height: 36px;
@@ -102,12 +110,15 @@ button:disabled {
 }
 
 button.primary {
-  background-color: var(--accent);
-  color: var(--bg-deep);
+  background-color: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
 }
 
 button.primary:hover:not(:disabled) {
-  background-color: var(--accent-hover);
+  background-color: var(--accent-muted);
+  border-color: var(--accent-hover);
+  color: var(--accent-hover);
 }
 
 button.secondary {
@@ -151,7 +162,6 @@ input::placeholder {
 input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(72, 213, 151, 0.15);
 }
 
 select {
@@ -169,7 +179,6 @@ select {
 select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(72, 213, 151, 0.15);
 }
 
 /* Card component */
@@ -184,15 +193,33 @@ select:focus {
   border-color: var(--border-emphasis);
 }
 
-/* Labels */
+/* Labels - Oxide style */
 .label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--letter-spacing-label);
   margin-bottom: var(--space-2);
   display: block;
+}
+
+/* Oxide Section Header */
+.sectionHeader {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sectionHeader::before {
+  content: '>';
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
 }
 
 /* Focus visible for accessibility */

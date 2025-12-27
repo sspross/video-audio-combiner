@@ -48,18 +48,21 @@
   gap: var(--space-1);
   height: 28px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  background-color: var(--info);
-  border: none;
+  border-radius: var(--radius-xs);
+  background-color: transparent;
+  border: 1px solid var(--info);
   cursor: pointer;
-  color: var(--bg-deep);
-  font-size: 13px;
+  color: var(--info);
+  font-size: 12px;
   font-weight: 500;
-  transition: background-color 150ms ease;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 150ms ease;
 }
 
 .playButton:hover {
-  background-color: #7ab4e8;
+  background-color: rgba(91, 158, 229, 0.12);
 }
 
 .playButton:disabled {
@@ -72,12 +75,13 @@
   align-items: center;
   height: 28px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
   color: var(--info);
-  background: var(--bg-surface);
+  background: transparent;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(91, 158, 229, 0.4);
 }
 
 .spinner {

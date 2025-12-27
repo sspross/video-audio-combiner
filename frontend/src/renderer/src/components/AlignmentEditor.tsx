@@ -338,7 +338,7 @@ export function AlignmentEditor({
   // Handle open wizard button
   const handleOpenWizard = useCallback(() => {
     store.setShowSetupWizard(true)
-    store.setSetupWizardStep('main-video')
+    store.setSetupWizardStep('files')
   }, [store])
 
   // Determine what to show in waveform areas
