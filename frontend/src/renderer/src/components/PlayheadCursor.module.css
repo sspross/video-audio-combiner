@@ -1,0 +1,11 @@
+.cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #3b82f6;
+  pointer-events: none;
+  z-index: 15;
+  transition: transform 200ms linear;
+  will-change: transform;
+}

@@ -16,6 +16,7 @@ function App() {
   const [previewVersion, setPreviewVersion] = useState(0)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
   const [isAutoDetecting, setIsAutoDetecting] = useState(false)
+  const [playbackPositionMs, setPlaybackPositionMs] = useState<number | null>(null)
 
   // Abort controller for preview generation
   const previewAbortControllerRef = useRef<AbortController | null>(null)
@@ -243,6 +244,7 @@ function App() {
   // Clear stale preview when preview parameters change
   useEffect(() => {
     setPreviewPath(null)
+    setPlaybackPositionMs(null)
   }, [store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted])
 
   // Handler for export modal to request save path
@@ -295,12 +297,16 @@ function App() {
           previewVersion={previewVersion}
           isGeneratingPreview={isGeneratingPreview}
           onPreviewRequest={handlePreviewRequest}
-          onPreviewEnded={() => setPreviewPath(null)}
+          onPreviewEnded={() => {
+            setPreviewPath(null)
+            setPlaybackPositionMs(null)
+          }}
           onStopGeneration={handleStopPreviewGeneration}
           extractFrame={api.extractFrame}
           offsetMs={store.offsetMs}
           onAutoDetect={handleAutoDetect}
           isAutoDetecting={isAutoDetecting}
+          onPlaybackTimeUpdate={setPlaybackPositionMs}
         />
       </div>
 
@@ -308,6 +314,7 @@ function App() {
       <div className={styles.timeline}>
         <AlignmentEditor
           canContinue={store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0 && !store.isLoading}
+          playbackPositionMs={playbackPositionMs}
         />
       </div>
 
