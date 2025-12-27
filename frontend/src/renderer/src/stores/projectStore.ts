@@ -37,6 +37,8 @@ interface ProjectActions {
   // Setup wizard actions
   setShowSetupWizard: (show: boolean) => void
   setSetupWizardStep: (step: SetupWizardStep) => void
+  // Analysis version control
+  incrementAnalysisVersion: () => void
 }
 
 const initialState: ProjectState = {
@@ -66,7 +68,9 @@ const initialState: ProjectState = {
   previewDurationSeconds: 15,
   // Setup wizard state
   showSetupWizard: true,
-  setupWizardStep: 'files-tracks'
+  setupWizardStep: 'files-tracks',
+  // Analysis version counter
+  analysisVersion: 0
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
@@ -124,5 +128,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   setPreviewDuration: (seconds) => set({ previewDurationSeconds: seconds }),
   // Setup wizard actions
   setShowSetupWizard: (show) => set({ showSetupWizard: show }),
-  setSetupWizardStep: (step) => set({ setupWizardStep: step })
+  setSetupWizardStep: (step) => set({ setupWizardStep: step }),
+  // Analysis version control
+  incrementAnalysisVersion: () => set((state) => ({ analysisVersion: state.analysisVersion + 1 }))
 }))

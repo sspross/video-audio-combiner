@@ -87,4 +87,6 @@ export interface ProjectState {
   // Setup wizard state
   showSetupWizard: boolean
   setupWizardStep: SetupWizardStep
+  // Analysis version counter to invalidate in-flight analysis when navigating back
+  analysisVersion: number
 }

@@ -14,20 +14,49 @@
 .header {
   grid-area: header;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: var(--space-3) var(--space-4);
-  background-color: var(--bg-elevated);
+  background-color: var(--bg-surface);
   border-bottom: 1px solid var(--border);
 }
 
-.title {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  letter-spacing: var(--letter-spacing-label);
+/* Steps */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  transition: color 150ms ease;
+}
+
+.step.active {
+  color: var(--accent);
+}
+
+.step.completed {
+  color: var(--success);
+}
+
+.stepLabel {
+  white-space: nowrap;
   text-transform: uppercase;
-  font-family: var(--font-mono);
+  letter-spacing: var(--letter-spacing-label);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.stepArrow {
+  color: var(--border-emphasis);
+  flex-shrink: 0;
 }
 
 .headerActions {

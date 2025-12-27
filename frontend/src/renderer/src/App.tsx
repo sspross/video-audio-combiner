@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, ChevronRight } from 'lucide-react'
 import { WaveformSpinner } from './components/WaveformSpinner'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
@@ -94,18 +94,30 @@ function App() {
       if (analyzedMainRef.current === mainKey) return
       analyzedMainRef.current = mainKey
 
+      // Capture version at start to detect if analysis becomes stale
+      const version = store.analysisVersion
+
       store.setError(null)
 
       try {
         const mainExtract = await api.extractAudio(store.mainFilePath, store.selectedMainTrackIndex)
+
+        // Check if stale before each state update
+        if (store.analysisVersion !== version) return
         store.setMainWavPath(mainExtract.wav_path)
 
+        if (store.analysisVersion !== version) return
         store.setMainAnalysisStep('waveform')
+
         const mainWaveform = await api.generateWaveform(mainExtract.wav_path)
+
+        if (store.analysisVersion !== version) return
         store.setMainPeaks(mainWaveform.peaks)
 
+        if (store.analysisVersion !== version) return
         store.setMainAnalysisStep('idle')
       } catch (err) {
+        if (store.analysisVersion !== version) return
         store.setError(err instanceof Error ? err.message : 'Main file analysis failed')
         analyzedMainRef.current = null
         store.setMainAnalysisStep('pending')
@@ -125,18 +137,30 @@ function App() {
       if (analyzedSecondaryRef.current === secondaryKey) return
       analyzedSecondaryRef.current = secondaryKey
 
+      // Capture version at start to detect if analysis becomes stale
+      const version = store.analysisVersion
+
       store.setError(null)
 
       try {
         const secondaryExtract = await api.extractAudio(store.secondaryFilePath, store.selectedSecondaryTrackIndex)
+
+        // Check if stale before each state update
+        if (store.analysisVersion !== version) return
         store.setSecondaryWavPath(secondaryExtract.wav_path)
 
+        if (store.analysisVersion !== version) return
         store.setSecondaryAnalysisStep('waveform')
+
         const secondaryWaveform = await api.generateWaveform(secondaryExtract.wav_path)
+
+        if (store.analysisVersion !== version) return
         store.setSecondaryPeaks(secondaryWaveform.peaks)
 
+        if (store.analysisVersion !== version) return
         store.setSecondaryAnalysisStep('idle')
       } catch (err) {
+        if (store.analysisVersion !== version) return
         store.setError(err instanceof Error ? err.message : 'Secondary file analysis failed')
         analyzedSecondaryRef.current = null
         store.setSecondaryAnalysisStep('pending')
@@ -263,17 +287,6 @@ function App() {
     }
   }, [store.mainFilePath, store.secondaryWavPath, store.offsetMs, api.isReady])
 
-  const handleReset = useCallback(() => {
-    store.reset()
-    setExportStatus('idle')
-    setExportError(null)
-    setPreviewPath(null)
-    setPreviewVersion(0)
-    setIsGeneratingPreview(false)
-    analyzedMainRef.current = null
-    analyzedSecondaryRef.current = null
-  }, [])
-
   if (!api.isReady) {
     return (
       <div className={styles.loadingScreen}>
@@ -285,9 +298,25 @@ function App() {
 
   return (
     <div className={styles.app}>
-      {/* Header */}
+      {/* Header - Step Bar */}
       <header className={styles.header}>
-        <h1 className={styles.title}>Video Audio Combiner</h1>
+        <div className={styles.steps}>
+          <div className={`${styles.step} ${styles.completed}`}>
+            <span className={styles.stepLabel}>Files & Tracks</span>
+          </div>
+          <ChevronRight size={16} className={styles.stepArrow} />
+          <div className={`${styles.step} ${styles.completed}`}>
+            <span className={styles.stepLabel}>Analyze</span>
+          </div>
+          <ChevronRight size={16} className={styles.stepArrow} />
+          <div className={`${styles.step} ${styles.active}`}>
+            <span className={styles.stepLabel}>Edit</span>
+          </div>
+          <ChevronRight size={16} className={styles.stepArrow} />
+          <div className={styles.step}>
+            <span className={styles.stepLabel}>Export</span>
+          </div>
+        </div>
       </header>
 
       {/* Video Preview - takes available space */}
@@ -313,7 +342,6 @@ function App() {
           onSelectSecondaryFile={handleSelectSecondaryFile}
           onLoadMainFile={loadMainFile}
           onLoadSecondaryFile={loadSecondaryFile}
-          onReset={handleReset}
           onExport={handleExport}
           exportStatus={exportStatus}
           exportError={exportError}

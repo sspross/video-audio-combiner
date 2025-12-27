@@ -352,8 +352,15 @@
 .offsetIndicator {
   height: 100%;
   background: rgba(255, 165, 0, 0.2);
-  border-right: 2px solid rgba(255, 165, 0, 0.6);
   flex-shrink: 0;
+}
+
+.offsetIndicatorMain {
+  border-right: 2px solid rgba(255, 165, 0, 0.6);
+}
+
+.offsetIndicatorSecondary {
+  border-left: 2px solid rgba(255, 165, 0, 0.6);
 }
 
 /* Toolbar */
@@ -427,7 +434,7 @@
   cursor: not-allowed;
 }
 
-.resetButton {
+.backButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,13 +454,13 @@
   transition: all 150ms ease;
 }
 
-.resetButton:hover:not(:disabled) {
+.backButton:hover:not(:disabled) {
   background: var(--bg-surface);
   border-color: #404040;
   color: var(--text-primary);
 }
 
-.resetButton:disabled {
+.backButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

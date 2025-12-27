@@ -66,15 +66,21 @@ export function SetupWizard({
       !alignmentTriggeredRef.current
     ) {
       alignmentTriggeredRef.current = true
+      // Capture version to detect if analysis becomes stale
+      const version = store.analysisVersion
       store.setAlignmentDetectionStep('detecting')
       api
         .detectAlignment(store.mainWavPath, store.secondaryWavPath)
         .then((result) => {
+          // Check if stale before updating state
+          if (store.analysisVersion !== version) return
           store.setOffset(result.offset_ms)
           store.setConfidence(result.confidence)
           store.setAlignmentDetectionStep('done')
         })
         .catch((err) => {
+          // Check if stale before updating state
+          if (store.analysisVersion !== version) return
           store.setError(err instanceof Error ? err.message : 'Alignment detection failed')
           store.setAlignmentDetectionStep('error')
         })
@@ -100,6 +106,9 @@ export function SetupWizard({
 
   const handleBack = useCallback(() => {
     if (currentStep === 'analyzing') {
+      // Invalidate any in-flight analysis first
+      store.incrementAnalysisVersion()
+
       // Go back to files-tracks and reset all analysis state
       store.setMainAnalysisStep('pending')
       store.setSecondaryAnalysisStep('pending')
@@ -207,6 +216,14 @@ export function SetupWizard({
             className={`${styles.step} ${currentStep === 'analyzing' ? styles.active : ''} ${isAnalyzeComplete ? styles.completed : ''}`}
           >
             <span className={styles.stepLabel}>Analyze</span>
+          </div>
+          <ChevronRight size={16} className={styles.stepArrow} />
+          <div className={styles.step}>
+            <span className={styles.stepLabel}>Edit</span>
+          </div>
+          <ChevronRight size={16} className={styles.stepArrow} />
+          <div className={styles.step}>
+            <span className={styles.stepLabel}>Export</span>
           </div>
         </div>
 

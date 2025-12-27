@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Volume2, VolumeX, FolderOpen, RotateCcw, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
+import { Volume2, VolumeX, FolderOpen, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
 import { WaveformSpinner } from './WaveformSpinner'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
@@ -130,7 +130,6 @@ interface AlignmentEditorProps {
   onSelectSecondaryFile: () => void
   onLoadMainFile: (path: string) => void
   onLoadSecondaryFile: (path: string) => void
-  onReset: () => void
   onExport: () => void
   exportStatus: 'idle' | 'exporting' | 'success' | 'error'
   exportError: string | null
@@ -138,7 +137,6 @@ interface AlignmentEditorProps {
 }
 
 export function AlignmentEditor({
-  onReset,
   onExport,
   exportStatus,
   exportError,
@@ -337,10 +335,16 @@ export function AlignmentEditor({
     [mainDuration, store.mainPeaks.length, store.cursorPositionMs]
   )
 
-  // Handle open wizard button
+  // Handle open wizard button (for empty state)
   const handleOpenWizard = useCallback(() => {
     store.setShowSetupWizard(true)
     store.setSetupWizardStep('files-tracks')
+  }, [store])
+
+  // Handle back button - opens wizard on analyzing step
+  const handleBack = useCallback(() => {
+    store.setShowSetupWizard(true)
+    store.setSetupWizardStep('analyzing')
   }, [store])
 
   // Determine what to show in waveform areas
@@ -354,7 +358,7 @@ export function AlignmentEditor({
           {/* Orange offset indicator when secondary starts earlier */}
           {mainStartOffset > 0 && (
             <div
-              className={styles.offsetIndicator}
+              className={`${styles.offsetIndicator} ${styles.offsetIndicatorMain}`}
               style={{ width: mainStartOffset }}
             />
           )}
@@ -380,7 +384,7 @@ export function AlignmentEditor({
           {/* Orange offset indicator at the beginning */}
           {secondaryStartOffset > 0 && (
             <div
-              className={styles.offsetIndicator}
+              className={`${styles.offsetIndicator} ${styles.offsetIndicatorSecondary}`}
               style={{ width: secondaryStartOffset }}
             />
           )}
@@ -509,6 +513,16 @@ export function AlignmentEditor({
       {/* Toolbar - always visible */}
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
+          <button
+            className={styles.backButton}
+            onClick={handleBack}
+            disabled={store.isLoading}
+          >
+            Back
+          </button>
+        </div>
+
+        <div className={styles.toolbarCenter}>
           <div className={`${styles.zoomControls} ${!hasWaveforms ? styles.disabled : ''}`}>
             <input
               type="range"
@@ -532,19 +546,7 @@ export function AlignmentEditor({
           </button>
         </div>
 
-        <div className={styles.toolbarCenter}>
-          {/* Offset controls moved to PreviewPanel */}
-        </div>
-
         <div className={styles.toolbarRight}>
-          <button
-            className={styles.resetButton}
-            onClick={onReset}
-            disabled={store.isLoading}
-          >
-            <RotateCcw size={14} />
-            Reset
-          </button>
           {exportStatus === 'idle' && (
             <button
               className={styles.exportButton}

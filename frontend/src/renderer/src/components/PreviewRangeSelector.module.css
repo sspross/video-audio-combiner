@@ -60,21 +60,3 @@
   cursor: ew-resize;
   z-index: 3;
 }
-
-.resizeHandle::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 4px;
-  height: 24px;
-  background: var(--info);
-  border-radius: 2px;
-  opacity: 0.6;
-  transition: opacity 150ms ease;
-}
-
-.resizeHandle:hover::after {
-  opacity: 1;
-}
