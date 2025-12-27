@@ -146,6 +146,19 @@ function App() {
     analyzeSecondary()
   }, [store.secondaryFilePath, store.selectedSecondaryTrackIndex, store.secondaryAnalysisStep, api.isReady])
 
+  // Clear analysis refs when analysis is reset (e.g., when going back in wizard)
+  useEffect(() => {
+    if (store.mainAnalysisStep === 'pending') {
+      analyzedMainRef.current = null
+    }
+  }, [store.mainAnalysisStep])
+
+  useEffect(() => {
+    if (store.secondaryAnalysisStep === 'pending') {
+      analyzedSecondaryRef.current = null
+    }
+  }, [store.secondaryAnalysisStep])
+
   const handleAutoDetect = useCallback(async () => {
     if (!store.mainWavPath || !store.secondaryWavPath || !api.isReady) return
 
@@ -265,7 +278,6 @@ function App() {
     return (
       <div className={styles.loadingScreen}>
         <WaveformSpinner size="lg" />
-        <span>Starting backend...</span>
         {store.error && <span className={styles.errorText}>{store.error}</span>}
       </div>
     )

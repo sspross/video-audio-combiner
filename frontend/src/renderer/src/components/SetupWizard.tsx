@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect, useRef } from 'react'
-import { Upload, ChevronRight, Film, Check, X, Volume2, Circle, AlertCircle } from 'lucide-react'
+import { Upload, ChevronRight, Film, Check, CheckCircle, X, Volume2, Circle, AlertCircle } from 'lucide-react'
 import { WaveformSpinner } from './WaveformSpinner'
 import { useProjectStore } from '../stores/projectStore'
 import { useBackendApi } from '../hooks/useBackendApi'
@@ -13,16 +13,27 @@ interface SetupWizardProps {
   onLoadSecondaryFile: (path: string) => void
 }
 
-function formatTrackInfo(track: AudioTrack): { header: string; description: string } {
-  const header = track.title || `Track ${track.index + 1}`
-  const descParts: string[] = []
-  if (track.language) descParts.push(track.language)
-  descParts.push(track.codec)
-  descParts.push(`${track.channels}ch`)
-  if (!track.title) descParts.unshift(`Track ${track.index + 1}`)
+function formatTrackInfo(track: AudioTrack): { title: string; details: string; duration: string } {
+  // Title: Language uppercase or Track N fallback
+  const title = track.language
+    ? track.language.toUpperCase()
+    : `Track ${track.index + 1}`
+
+  // Details: Title - CODEC - Nch (dash separator)
+  const parts: string[] = []
+  if (track.title) parts.push(track.title)
+  parts.push(track.codec.toUpperCase())
+  parts.push(`${track.channels}ch`)
+
+  // Duration formatted
+  const mins = Math.floor(track.duration_seconds / 60)
+  const secs = Math.floor(track.duration_seconds % 60)
+  const duration = `${mins}:${secs.toString().padStart(2, '0')}`
+
   return {
-    header,
-    description: descParts.join(' • ')
+    title,
+    details: parts.join(' - '),
+    duration
   }
 }
 
@@ -91,10 +102,16 @@ export function SetupWizard({
     if (currentStep === 'track-selection') {
       store.setSetupWizardStep('files')
     } else if (currentStep === 'analyzing') {
-      // Go back to track selection and reset analysis state
+      // Go back to track selection and reset all analysis state
       store.setMainAnalysisStep('pending')
       store.setSecondaryAnalysisStep('pending')
       store.setAlignmentDetectionStep('idle')
+      store.setMainWavPath(null)
+      store.setSecondaryWavPath(null)
+      store.setMainPeaks([])
+      store.setSecondaryPeaks([])
+      store.setOffset(0)
+      store.setConfidence(0)
       store.setSetupWizardStep('track-selection')
     }
   }, [currentStep, store])
@@ -162,6 +179,15 @@ export function SetupWizard({
     store.alignmentDetectionStep === 'done' || store.alignmentDetectionStep === 'error'
   const alignmentFailed = store.alignmentDetectionStep === 'error'
   const allAnalysisDone = waveformDone && alignmentDone
+
+  // Task active states (currently running)
+  const extractActive =
+    store.mainAnalysisStep === 'extracting' || store.secondaryAnalysisStep === 'extracting'
+  const waveformActive =
+    extractDone && !waveformDone &&
+    (store.mainAnalysisStep === 'waveform' || store.secondaryAnalysisStep === 'waveform')
+  const alignmentActive =
+    waveformDone && !alignmentDone && store.alignmentDetectionStep === 'detecting'
 
   // Determine step states for indicators
   const isFilesComplete = hasMainFile && hasSecondaryFile
@@ -279,9 +305,10 @@ export function SetupWizard({
                             {store.selectedMainTrackIndex === track.index && <span className={styles.radioButtonDot} />}
                           </span>
                           <span className={styles.trackTileContent}>
-                            <span className={styles.trackTileHeader}>{info.header}</span>
-                            <span className={styles.trackTileDescription}>{info.description}</span>
+                            <span className={styles.trackTileHeader}>{info.title}</span>
+                            <span className={styles.trackTileDescription}>{info.details}</span>
                           </span>
+                          <span className={styles.trackTileDuration}>{info.duration}</span>
                         </button>
                       )
                     })}
@@ -306,9 +333,10 @@ export function SetupWizard({
                             {store.selectedSecondaryTrackIndex === track.index && <span className={styles.radioButtonDot} />}
                           </span>
                           <span className={styles.trackTileContent}>
-                            <span className={styles.trackTileHeader}>{info.header}</span>
-                            <span className={styles.trackTileDescription}>{info.description}</span>
+                            <span className={styles.trackTileHeader}>{info.title}</span>
+                            <span className={styles.trackTileDescription}>{info.details}</span>
                           </span>
+                          <span className={styles.trackTileDuration}>{info.duration}</span>
                         </button>
                       )
                     })}
@@ -332,36 +360,36 @@ export function SetupWizard({
 
                 {/* Task List */}
                 <ul className={styles.taskList}>
-                  <li className={`${styles.taskItem} ${extractDone ? styles.completed : ''}`}>
+                  <li className={`${styles.taskItem} ${extractDone ? styles.completed : ''} ${extractActive ? styles.active : ''}`}>
                     {extractDone ? (
-                      <Check size={18} className={styles.taskCheckIcon} />
+                      <CheckCircle size={18} className={styles.taskCheckIcon} />
                     ) : (
                       <Circle size={18} className={styles.taskPendingIcon} />
                     )}
                     <span>Extracting audio</span>
                   </li>
-                  <li className={`${styles.taskItem} ${waveformDone ? styles.completed : ''}`}>
+                  <li className={`${styles.taskItem} ${waveformDone ? styles.completed : ''} ${waveformActive ? styles.active : ''}`}>
                     {waveformDone ? (
-                      <Check size={18} className={styles.taskCheckIcon} />
+                      <CheckCircle size={18} className={styles.taskCheckIcon} />
                     ) : (
                       <Circle size={18} className={styles.taskPendingIcon} />
                     )}
                     <span>Generating waveforms</span>
                   </li>
                   <li
-                    className={`${styles.taskItem} ${alignmentDone ? styles.completed : ''} ${alignmentFailed ? styles.failed : ''}`}
+                    className={`${styles.taskItem} ${alignmentDone ? styles.completed : ''} ${alignmentFailed ? styles.failed : ''} ${alignmentActive ? styles.active : ''}`}
                   >
                     {alignmentDone ? (
                       alignmentFailed ? (
                         <AlertCircle size={18} className={styles.taskErrorIcon} />
                       ) : (
-                        <Check size={18} className={styles.taskCheckIcon} />
+                        <CheckCircle size={18} className={styles.taskCheckIcon} />
                       )
                     ) : (
                       <Circle size={18} className={styles.taskPendingIcon} />
                     )}
                     <span>
-                      Detecting audio wave offset
+                      Guessing audio wave offset
                       {alignmentFailed && ' (failed)'}
                     </span>
                   </li>

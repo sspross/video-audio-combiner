@@ -13,8 +13,8 @@ interface ProjectActions {
   setSecondaryFile: (path: string, tracks: AudioTrack[]) => void
   setSelectedMainTrack: (index: number) => void
   setSelectedSecondaryTrack: (index: number) => void
-  setMainWavPath: (path: string) => void
-  setSecondaryWavPath: (path: string) => void
+  setMainWavPath: (path: string | null) => void
+  setSecondaryWavPath: (path: string | null) => void
   setMainPeaks: (peaks: number[]) => void
   setSecondaryPeaks: (peaks: number[]) => void
   setMainAnalysisStep: (step: AnalysisStep) => void

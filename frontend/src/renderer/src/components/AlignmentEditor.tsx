@@ -65,12 +65,12 @@ function TimelineRuler({ duration, pixelsPerSecond, offsetPx, totalWidth }: Time
 }
 
 interface TrackHeaderProps {
-  filePath: string | null
-  fileName: string | null
-  audioTrackName: string | null
+  title: string
+  details: string
   duration?: number
   isMuted: boolean
   onMuteToggle: () => void
+  hasFile: boolean
 }
 
 function formatDuration(seconds: number): string {
@@ -80,26 +80,24 @@ function formatDuration(seconds: number): string {
 }
 
 function TrackHeader({
-  filePath,
-  fileName,
-  audioTrackName,
+  title,
+  details,
   duration,
   isMuted,
-  onMuteToggle
+  onMuteToggle,
+  hasFile
 }: TrackHeaderProps) {
-  const hasFile = !!filePath
-
   return (
     <div className={styles.trackHeader}>
       <div className={styles.trackInfo}>
         <div className={styles.trackDetails}>
           {hasFile ? (
             <>
-              <span className={styles.labelText} title={filePath}>
-                {fileName}
+              <span className={styles.labelText} title={title}>
+                {title}
               </span>
-              <span className={styles.fileName} title={audioTrackName || undefined}>
-                {audioTrackName || 'Audio'}
+              <span className={styles.fileName} title={details}>
+                {details}
               </span>
             </>
           ) : (
@@ -173,22 +171,29 @@ export function AlignmentEditor({
   const hasWaveforms = hasMainPeaks && hasSecondaryPeaks
   const hasAnyFiles = hasMainFile || hasSecondaryFile
 
-  const mainFileName = store.mainFilePath ? store.mainFilePath.split('/').pop() || null : null
-  const secondaryFileName = store.secondaryFilePath ? store.secondaryFilePath.split('/').pop() || null : null
+  // Get audio track display info (title + details)
+  const getTrackDisplayInfo = (track: { index: number; title?: string | null; language?: string | null; codec?: string; channels?: number } | undefined): { title: string; details: string } => {
+    if (!track) return { title: 'No track', details: '—' }
 
-  // Get audio track display names
-  const getTrackDisplayName = (track: { title?: string | null; language?: string | null; codec?: string; channels?: number } | undefined): string | null => {
-    if (!track) return null
+    // Title: Language uppercase or Track N fallback
+    const title = track.language
+      ? track.language.toUpperCase()
+      : `Track ${track.index + 1}`
+
+    // Details: Title - CODEC - Nch (dash separator)
     const parts: string[] = []
     if (track.title) parts.push(track.title)
-    else if (track.language) parts.push(track.language)
     if (track.codec) parts.push(track.codec.toUpperCase())
     if (track.channels) parts.push(`${track.channels}ch`)
-    return parts.length > 0 ? parts.join(' · ') : 'Audio'
+
+    return {
+      title,
+      details: parts.length > 0 ? parts.join(' - ') : '—'
+    }
   }
 
-  const mainAudioTrackName = getTrackDisplayName(store.mainTracks[store.selectedMainTrackIndex])
-  const secondaryAudioTrackName = getTrackDisplayName(store.secondaryTracks[store.selectedSecondaryTrackIndex])
+  const mainTrackInfo = getTrackDisplayInfo(store.mainTracks[store.selectedMainTrackIndex])
+  const secondaryTrackInfo = getTrackDisplayInfo(store.secondaryTracks[store.selectedSecondaryTrackIndex])
 
   // Downsample peaks for display
   const downsamplePeaks = useCallback((peaks: number[], targetLength: number): number[] => {
@@ -402,20 +407,20 @@ export function AlignmentEditor({
           {/* Spacer to align with timeline ruler */}
           <div className={styles.rulerSpacer} />
           <TrackHeader
-            filePath={store.mainFilePath}
-            fileName={mainFileName}
-            audioTrackName={mainAudioTrackName}
+            title={mainTrackInfo.title}
+            details={mainTrackInfo.details}
             duration={mainDuration}
             isMuted={store.isMainAudioMuted}
             onMuteToggle={store.toggleMainAudioMute}
+            hasFile={hasMainFile}
           />
           <TrackHeader
-            filePath={store.secondaryFilePath}
-            fileName={secondaryFileName}
-            audioTrackName={secondaryAudioTrackName}
+            title={secondaryTrackInfo.title}
+            details={secondaryTrackInfo.details}
             duration={secondaryDuration}
             isMuted={store.isSecondaryAudioMuted}
             onMuteToggle={store.toggleSecondaryAudioMute}
+            hasFile={hasSecondaryFile}
           />
         </div>
 
