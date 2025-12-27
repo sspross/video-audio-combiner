@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   height: 28px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-xs);
@@ -92,7 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--warning);
   height: 28px;

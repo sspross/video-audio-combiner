@@ -7,6 +7,7 @@ interface WaveformTrackProps {
   pixelsPerSecond: number
   isDraggable?: boolean
   onOffsetChange?: (deltaMs: number) => void
+  onDragStateChange?: (isDragging: boolean) => void
   isMuted: boolean
 }
 
@@ -62,6 +63,7 @@ export function WaveformTrack({
   pixelsPerSecond,
   isDraggable = false,
   onOffsetChange,
+  onDragStateChange,
   isMuted
 }: WaveformTrackProps) {
   const isDragging = useRef(false)
@@ -73,8 +75,9 @@ export function WaveformTrack({
       e.preventDefault()
       isDragging.current = true
       dragStartX.current = e.clientX
+      onDragStateChange?.(true)
     },
-    [isDraggable, onOffsetChange]
+    [isDraggable, onOffsetChange, onDragStateChange]
   )
 
   const handleMouseMove = useCallback(
@@ -89,8 +92,11 @@ export function WaveformTrack({
   )
 
   const handleMouseUp = useCallback(() => {
-    isDragging.current = false
-  }, [])
+    if (isDragging.current) {
+      isDragging.current = false
+      onDragStateChange?.(false)
+    }
+  }, [onDragStateChange])
 
   useEffect(() => {
     if (isDraggable) {

@@ -409,7 +409,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--warning);
   height: 28px;
@@ -438,7 +438,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--border-emphasis);
   height: 28px;
@@ -469,7 +469,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--accent);
   height: 28px;
@@ -500,7 +500,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--success);
   height: 28px;
@@ -519,7 +519,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--error);
   height: 28px;

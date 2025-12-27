@@ -260,11 +260,10 @@ export function AlignmentEditor({
       // Account for scroll padding and mainStartOffset, then convert to time
       const clickTimeSeconds = (clickX - scrollPaddingPx - mainStartOffset) / pixelsPerSecond
 
-      // Center the preview range on the clicked position
-      const halfDuration = store.previewDurationSeconds / 2
+      // Position preview range start at the clicked position
       const newStartTimeMs = Math.max(
         0,
-        Math.min(mainDuration * 1000 - store.previewDurationSeconds * 1000, (clickTimeSeconds - halfDuration) * 1000)
+        Math.min(mainDuration * 1000 - store.previewDurationSeconds * 1000, clickTimeSeconds * 1000)
       )
       store.setPreviewStartTime(newStartTimeMs)
       store.setCursorPosition(newStartTimeMs)
@@ -394,6 +393,7 @@ export function AlignmentEditor({
             pixelsPerSecond={pixelsPerSecond}
             isDraggable
             onOffsetChange={handleOffsetChange}
+            onDragStateChange={handlePreviewDragStateChange}
             isMuted={store.isSecondaryAudioMuted}
           />
         </div>
