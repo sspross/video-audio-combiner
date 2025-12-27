@@ -102,7 +102,8 @@ export function useBackendApi() {
       offsetMs: number,
       outputPath: string,
       language: string = 'und',
-      title?: string
+      title?: string,
+      modifyOriginal: boolean = false
     ): Promise<MergeResponse> => {
       if (!apiClient) throw new Error('Backend not ready')
       const response = await apiClient.post('/merge', {
@@ -111,7 +112,8 @@ export function useBackendApi() {
         offset_ms: offsetMs,
         output_path: outputPath,
         language,
-        title
+        title,
+        modify_original: modifyOriginal
       })
       return response.data
     },

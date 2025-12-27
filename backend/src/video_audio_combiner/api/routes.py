@@ -92,6 +92,7 @@ async def merge_audio(request: MergeRequest) -> MergeResponse:
             output_path=request.output_path,
             language=request.language,
             title=request.title,
+            modify_original=request.modify_original,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

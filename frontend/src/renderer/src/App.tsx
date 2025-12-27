@@ -4,6 +4,7 @@ import { WaveformSpinner } from './components/WaveformSpinner'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
 import { SetupWizard } from './components/SetupWizard'
+import { ExportModal } from './components/ExportModal'
 import { useProjectStore } from './stores/projectStore'
 import { useBackendApi } from './hooks/useBackendApi'
 import styles from './App.module.css'
@@ -11,10 +12,6 @@ import styles from './App.module.css'
 function App() {
   const store = useProjectStore()
   const api = useBackendApi()
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
-    'idle'
-  )
-  const [exportError, setExportError] = useState<string | null>(null)
   const [previewPath, setPreviewPath] = useState<string | null>(null)
   const [previewVersion, setPreviewVersion] = useState(0)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
@@ -248,44 +245,16 @@ function App() {
     setPreviewPath(null)
   }, [store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted])
 
-  const handleExport = useCallback(async () => {
-    if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
-
-    const mainFileName = store.mainFilePath.split('/').pop() || 'output'
-    const extension = mainFileName.split('.').pop() || 'mkv'
-    const baseName = mainFileName.replace(`.${extension}`, '')
-
-    const outputPath = await window.electron.saveFile({
-      defaultPath: `${baseName}_merged.${extension}`,
-      filters: [{ name: 'Video Files', extensions: [extension, 'mkv', 'mp4'] }]
-    })
-
-    if (!outputPath) return
-
-    setExportStatus('exporting')
-    setExportError(null)
-
-    try {
-      const result = await api.mergeAudio(
-        store.mainFilePath,
-        store.secondaryWavPath,
-        store.offsetMs,
-        outputPath,
-        'ger',
-        'German Dub'
-      )
-
-      if (result.success) {
-        setExportStatus('success')
-      } else {
-        setExportStatus('error')
-        setExportError('Export failed')
-      }
-    } catch (err) {
-      setExportStatus('error')
-      setExportError(err instanceof Error ? err.message : 'Export failed')
-    }
-  }, [store.mainFilePath, store.secondaryWavPath, store.offsetMs, api.isReady])
+  // Handler for export modal to request save path
+  const handleRequestSavePath = useCallback(
+    async (defaultName: string, extension: string): Promise<string | null> => {
+      return window.electron.saveFile({
+        defaultPath: defaultName,
+        filters: [{ name: 'Video Files', extensions: [extension, 'mkv', 'mp4'] }]
+      })
+    },
+    []
+  )
 
   if (!api.isReady) {
     return (
@@ -338,14 +307,7 @@ function App() {
       {/* Timeline/Waveforms - fixed height at bottom */}
       <div className={styles.timeline}>
         <AlignmentEditor
-          onSelectMainFile={handleSelectMainFile}
-          onSelectSecondaryFile={handleSelectSecondaryFile}
-          onLoadMainFile={loadMainFile}
-          onLoadSecondaryFile={loadSecondaryFile}
-          onExport={handleExport}
-          exportStatus={exportStatus}
-          exportError={exportError}
-          canExport={store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0 && !store.isLoading}
+          canContinue={store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0 && !store.isLoading}
         />
       </div>
 
@@ -367,6 +329,9 @@ function App() {
           onLoadSecondaryFile={loadSecondaryFile}
         />
       )}
+
+      {/* Export Modal */}
+      {store.showExportModal && <ExportModal onRequestSavePath={handleRequestSavePath} />}
     </div>
   )
 }

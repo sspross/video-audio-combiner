@@ -59,6 +59,10 @@ export type AlignmentDetectionStep = 'idle' | 'detecting' | 'done' | 'error'
 
 export type SetupWizardStep = 'files-tracks' | 'analyzing'
 
+export type ExportMode = 'add-to-original' | 'create-new'
+
+export type ExportStep = 'options' | 'exporting' | 'done' | 'error'
+
 export interface ProjectState {
   mainFilePath: string | null
   secondaryFilePath: string | null
@@ -89,4 +93,11 @@ export interface ProjectState {
   setupWizardStep: SetupWizardStep
   // Analysis version counter to invalidate in-flight analysis when navigating back
   analysisVersion: number
+  // Export modal state
+  showExportModal: boolean
+  exportStep: ExportStep
+  exportMode: ExportMode
+  exportLanguage: string
+  exportTitle: string
+  exportError: string | null
 }

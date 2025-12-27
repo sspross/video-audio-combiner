@@ -3,6 +3,8 @@ import type {
   AlignmentDetectionStep,
   AnalysisStep,
   AudioTrack,
+  ExportMode,
+  ExportStep,
   ProjectState,
   SetupWizardStep,
   WorkflowStep
@@ -39,6 +41,14 @@ interface ProjectActions {
   setSetupWizardStep: (step: SetupWizardStep) => void
   // Analysis version control
   incrementAnalysisVersion: () => void
+  // Export modal actions
+  setShowExportModal: (show: boolean) => void
+  setExportStep: (step: ExportStep) => void
+  setExportMode: (mode: ExportMode) => void
+  setExportLanguage: (language: string) => void
+  setExportTitle: (title: string) => void
+  setExportError: (error: string | null) => void
+  resetExportModal: () => void
 }
 
 const initialState: ProjectState = {
@@ -70,7 +80,14 @@ const initialState: ProjectState = {
   showSetupWizard: true,
   setupWizardStep: 'files-tracks',
   // Analysis version counter
-  analysisVersion: 0
+  analysisVersion: 0,
+  // Export modal state
+  showExportModal: false,
+  exportStep: 'options',
+  exportMode: 'create-new',
+  exportLanguage: '',
+  exportTitle: '',
+  exportError: null
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
@@ -130,5 +147,20 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   setShowSetupWizard: (show) => set({ showSetupWizard: show }),
   setSetupWizardStep: (step) => set({ setupWizardStep: step }),
   // Analysis version control
-  incrementAnalysisVersion: () => set((state) => ({ analysisVersion: state.analysisVersion + 1 }))
+  incrementAnalysisVersion: () => set((state) => ({ analysisVersion: state.analysisVersion + 1 })),
+  // Export modal actions
+  setShowExportModal: (show) => set({ showExportModal: show }),
+  setExportStep: (step) => set({ exportStep: step }),
+  setExportMode: (mode) => set({ exportMode: mode }),
+  setExportLanguage: (language) => set({ exportLanguage: language }),
+  setExportTitle: (title) => set({ exportTitle: title }),
+  setExportError: (error) => set({ exportError: error }),
+  resetExportModal: () =>
+    set({
+      showExportModal: false,
+      exportStep: 'options',
+      exportLanguage: '',
+      exportTitle: '',
+      exportError: null
+    })
 }))

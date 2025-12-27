@@ -82,6 +82,7 @@ class MergeRequest(BaseModel):
     output_path: str
     language: str = "und"
     title: str | None = None
+    modify_original: bool = False
 
 
 class MergeResponse(BaseModel):

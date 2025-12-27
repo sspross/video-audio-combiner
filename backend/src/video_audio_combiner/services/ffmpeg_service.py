@@ -170,6 +170,7 @@ class FFmpegService:
         output_path: str,
         language: str = "und",
         title: str | None = None,
+        modify_original: bool = False,
     ) -> MergeResponse:
         """Merge an audio track into a video file.
 
@@ -180,10 +181,13 @@ class FFmpegService:
             output_path: Path for the output file.
             language: Language code for the audio track.
             title: Title for the audio track.
+            modify_original: If True, modify the original file in place.
 
         Returns:
             MergeResponse with result information.
         """
+        import shutil
+
         video = Path(video_path)
         audio = Path(audio_path)
 
@@ -197,6 +201,14 @@ class FFmpegService:
 
         # Get the index for the new audio track
         new_track_index = self._count_audio_tracks(video_path)
+
+        # Determine actual output path (use temp file if modifying original)
+        if modify_original:
+            actual_output = self.temp_dir / f"merge_temp{video.suffix}"
+            final_output = video_path
+        else:
+            actual_output = Path(output_path)
+            final_output = output_path
 
         # Build FFmpeg command
         cmd = [
@@ -229,12 +241,20 @@ class FFmpegService:
                 ]
             )
 
-        cmd.append(output_path)
+        cmd.append(str(actual_output))
 
         try:
             subprocess.run(cmd, capture_output=True, text=True, check=True)
-            return MergeResponse(output_path=output_path, success=True)
+
+            # If modifying original, replace the original file with the temp file
+            if modify_original:
+                shutil.move(str(actual_output), final_output)
+
+            return MergeResponse(output_path=final_output, success=True)
         except subprocess.CalledProcessError as e:
+            # Clean up temp file if it exists
+            if modify_original and actual_output.exists():
+                actual_output.unlink()
             raise ValueError(f"FFmpeg merge failed: {e.stderr}") from e
 
     def _count_audio_tracks(self, file_path: str) -> int:

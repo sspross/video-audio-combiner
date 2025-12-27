@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Volume2, VolumeX, FolderOpen, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
-import { WaveformSpinner } from './WaveformSpinner'
+import { Volume2, VolumeX, FolderOpen, Grid3X3 } from 'lucide-react'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
 import { PreviewRangeSelector } from './PreviewRangeSelector'
@@ -126,22 +125,10 @@ function TrackHeader({
 }
 
 interface AlignmentEditorProps {
-  onSelectMainFile: () => void
-  onSelectSecondaryFile: () => void
-  onLoadMainFile: (path: string) => void
-  onLoadSecondaryFile: (path: string) => void
-  onExport: () => void
-  exportStatus: 'idle' | 'exporting' | 'success' | 'error'
-  exportError: string | null
-  canExport: boolean
+  canContinue: boolean
 }
 
-export function AlignmentEditor({
-  onExport,
-  exportStatus,
-  exportError,
-  canExport
-}: AlignmentEditorProps) {
+export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
   const store = useProjectStore()
   const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(false)
@@ -346,6 +333,16 @@ export function AlignmentEditor({
     store.setSetupWizardStep('analyzing')
   }, [store])
 
+  // Handle continue button - opens export modal
+  const handleContinue = useCallback(() => {
+    // Initialize language from secondary track
+    const secondaryTrack = store.secondaryTracks[store.selectedSecondaryTrackIndex]
+    if (secondaryTrack?.language) {
+      store.setExportLanguage(secondaryTrack.language.toUpperCase())
+    }
+    store.setShowExportModal(true)
+  }, [store])
+
   // Determine what to show in waveform areas
   const mainWaveformContent = () => {
     if (hasMainPeaks) {
@@ -547,34 +544,13 @@ export function AlignmentEditor({
         </div>
 
         <div className={styles.toolbarRight}>
-          {exportStatus === 'idle' && (
-            <button
-              className={styles.exportButton}
-              onClick={onExport}
-              disabled={!canExport}
-            >
-              <Download size={14} />
-              Export
-            </button>
-          )}
-          {exportStatus === 'exporting' && (
-            <button className={styles.exportButton} disabled>
-              <WaveformSpinner size="sm" />
-              Exporting...
-            </button>
-          )}
-          {exportStatus === 'success' && (
-            <button className={styles.exportButtonSuccess} onClick={onExport}>
-              <CheckCircle size={14} />
-              Done!
-            </button>
-          )}
-          {exportStatus === 'error' && (
-            <button className={styles.exportButtonError} onClick={onExport} title={exportError || 'Export failed'}>
-              <AlertCircle size={14} />
-              Retry
-            </button>
-          )}
+          <button
+            className={styles.continueButton}
+            onClick={handleContinue}
+            disabled={!canContinue}
+          >
+            Continue
+          </button>
         </div>
       </div>
     </div>

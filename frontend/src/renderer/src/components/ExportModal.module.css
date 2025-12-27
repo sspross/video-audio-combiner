@@ -1,0 +1,548 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  width: 480px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Steps */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  transition: color 150ms ease;
+}
+
+.step.active {
+  color: var(--accent);
+}
+
+.step.completed {
+  color: var(--success);
+}
+
+.stepLabel {
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.stepArrow {
+  color: var(--border-emphasis);
+  flex-shrink: 0;
+}
+
+/* Content */
+.content {
+  padding: var(--space-6);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Section */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+}
+
+.sectionIcon {
+  flex-shrink: 0;
+}
+
+/* Option Tiles (Radio) */
+.optionTiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.optionTile {
+  width: 100%;
+  padding: var(--space-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 150ms ease;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  /* Ensure button contains all content */
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.optionTile:hover {
+  border-color: var(--border-emphasis);
+}
+
+.optionTile:hover .radioButton {
+  border-color: var(--border-emphasis);
+}
+
+.optionTileSelected {
+  border-color: var(--accent);
+}
+
+.optionTileSelected:hover {
+  border-color: var(--accent);
+}
+
+.radioButton {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 150ms ease;
+  margin-top: 1px;
+  box-sizing: border-box;
+}
+
+.optionTileSelected .radioButton {
+  border-color: var(--accent);
+}
+
+.radioButtonDot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  background-color: var(--accent);
+  border-radius: 50%;
+}
+
+.optionTileContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.optionTileHeader {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.optionTileSelected .optionTileHeader {
+  color: var(--accent);
+}
+
+.optionTileDescription {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+/* Track Info Card */
+.trackInfoCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: var(--space-2) 0;
+}
+
+.trackInfoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+}
+
+.trackInfoRowEditable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+}
+
+.trackInfoLabel {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.trackInfoValue {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.trackInfoValueHighlight {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--warning);
+  letter-spacing: 0.02em;
+}
+
+/* Inline Select (for track info card) */
+.selectInline {
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  transition: border-color 150ms ease;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+  min-width: 160px;
+}
+
+.selectInline:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.selectInline option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Inline Input (for track info card) */
+.inputInline {
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  transition: border-color 150ms ease;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+
+.inputInline:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.inputInline::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Input Field */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.inputLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.input {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition: border-color 150ms ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Select Dropdown */
+.select {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition: border-color 150ms ease;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: var(--space-2);
+}
+
+/* Exporting Step */
+.exportingContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+}
+
+.spinnerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successIcon {
+  color: var(--success);
+}
+
+.errorIcon {
+  color: var(--error);
+}
+
+.taskList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: 280px;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  transition: color 150ms ease;
+}
+
+.taskItem.completed {
+  color: var(--text-primary);
+}
+
+.taskItem.active {
+  color: var(--accent);
+}
+
+.taskItem.active .taskPendingIcon {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.taskItem.failed {
+  color: var(--error);
+}
+
+.taskCheckIcon {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.taskPendingIcon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.taskErrorIcon {
+  color: var(--error);
+  flex-shrink: 0;
+}
+
+.errorMessage {
+  font-size: 13px;
+  color: var(--error);
+  text-align: center;
+  max-width: 300px;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 1px solid var(--border-emphasis);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.backButton:hover:not(:disabled) {
+  background: var(--bg-surface);
+  border-color: #404040;
+  color: var(--text-primary);
+}
+
+.backButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: 1px solid var(--accent);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.exportButton:hover:not(:disabled) {
+  background: var(--accent-muted);
+  border-color: var(--accent-hover);
+  color: var(--accent-hover);
+}
+
+.exportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.doneButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: 1px solid var(--success);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--success);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.doneButton:hover {
+  background: rgba(var(--success-rgb), 0.1);
+}

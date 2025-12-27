@@ -534,6 +534,36 @@
   cursor: pointer;
 }
 
+.continueButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--accent);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.continueButton:hover:not(:disabled) {
+  background: var(--accent-muted);
+  border-color: var(--accent-hover);
+  color: var(--accent-hover);
+}
+
+.continueButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .zoomControls {
   display: flex;
   align-items: center;
