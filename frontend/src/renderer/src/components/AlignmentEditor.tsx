@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Wand2, Volume2, VolumeX, FolderOpen, RotateCcw, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
+import { Volume2, VolumeX, FolderOpen, RotateCcw, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
 import { WaveformSpinner } from './WaveformSpinner'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
@@ -128,8 +128,6 @@ function TrackHeader({
 }
 
 interface AlignmentEditorProps {
-  onAutoDetect: () => void
-  isAutoDetecting: boolean
   onSelectMainFile: () => void
   onSelectSecondaryFile: () => void
   onLoadMainFile: (path: string) => void
@@ -142,8 +140,6 @@ interface AlignmentEditorProps {
 }
 
 export function AlignmentEditor({
-  onAutoDetect,
-  isAutoDetecting,
   onReset,
   onExport,
   exportStatus,
@@ -532,22 +528,7 @@ export function AlignmentEditor({
         </div>
 
         <div className={styles.toolbarCenter}>
-          <span className={`${styles.offsetDisplay} ${!hasWaveforms ? styles.disabled : ''}`}>
-            {store.offsetMs > 0 ? '+' : ''}{store.offsetMs.toFixed(0)}ms
-          </span>
-          <button
-            className={styles.autoDetectButton}
-            onClick={onAutoDetect}
-            disabled={!hasWaveforms || isAutoDetecting}
-            title="Auto-detect alignment"
-          >
-            {isAutoDetecting ? (
-              <WaveformSpinner size="sm" />
-            ) : (
-              <Wand2 size={14} />
-            )}
-            Auto
-          </button>
+          {/* Offset controls moved to PreviewPanel */}
         </div>
 
         <div className={styles.toolbarRight}>

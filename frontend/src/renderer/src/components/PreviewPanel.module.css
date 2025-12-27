@@ -88,3 +88,51 @@
   border: 1px solid rgba(91, 158, 229, 0.4);
 }
 
+.guessOffsetButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: 1px solid var(--warning);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--warning);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.guessOffsetButton:hover:not(:disabled) {
+  background: rgba(245, 166, 35, 0.12);
+}
+
+.guessOffsetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.offsetDisplay {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--warning);
+  background: transparent;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(245, 166, 35, 0.4);
+}
+
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+

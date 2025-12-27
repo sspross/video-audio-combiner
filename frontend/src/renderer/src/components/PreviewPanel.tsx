@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Play, Pause, Video } from 'lucide-react'
+import { Play, Pause, Video, Wand2 } from 'lucide-react'
 import { VideoFramePreview, VideoFramePreviewHandle } from './VideoFramePreview'
+import { WaveformSpinner } from './WaveformSpinner'
 import { useProjectStore } from '../stores/projectStore'
 import type { FrameResponse } from '../types'
 import styles from './PreviewPanel.module.css'
@@ -13,6 +14,9 @@ interface PreviewPanelProps {
   onPreviewEnded: () => void
   onStopGeneration?: () => void
   extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
+  offsetMs: number
+  onAutoDetect: () => void
+  isAutoDetecting: boolean
 }
 
 function formatTimeShort(ms: number): string {
@@ -29,7 +33,10 @@ export function PreviewPanel({
   onPreviewRequest,
   onPreviewEnded,
   onStopGeneration,
-  extractFrame
+  extractFrame,
+  offsetMs,
+  onAutoDetect,
+  isAutoDetecting
 }: PreviewPanelProps) {
   const store = useProjectStore()
   const hasWaveforms = store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0
@@ -121,6 +128,26 @@ export function PreviewPanel({
 
       {/* Controls */}
       <div className={styles.controls}>
+        {/* Guess Offset Button */}
+        <button
+          className={styles.guessOffsetButton}
+          onClick={onAutoDetect}
+          disabled={!hasWaveforms || isAutoDetecting}
+          title="Auto-detect alignment"
+        >
+          {isAutoDetecting ? (
+            <WaveformSpinner size="sm" />
+          ) : (
+            <Wand2 size={14} />
+          )}
+          Guess Offset
+        </button>
+
+        {/* Offset Display */}
+        <span className={`${styles.offsetDisplay} ${!hasWaveforms ? styles.disabled : ''}`}>
+          {offsetMs > 0 ? '+' : ''}{offsetMs.toFixed(0)}ms
+        </span>
+
         {/* Preview Time Range */}
         <span className={styles.previewTimeRange}>
           {formatTimeShort(store.previewStartTimeMs)} –{' '}

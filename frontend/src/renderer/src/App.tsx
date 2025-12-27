@@ -288,14 +288,15 @@ function App() {
           onPreviewEnded={() => setPreviewPath(null)}
           onStopGeneration={handleStopPreviewGeneration}
           extractFrame={api.extractFrame}
+          offsetMs={store.offsetMs}
+          onAutoDetect={handleAutoDetect}
+          isAutoDetecting={isAutoDetecting}
         />
       </div>
 
       {/* Timeline/Waveforms - fixed height at bottom */}
       <div className={styles.timeline}>
         <AlignmentEditor
-          onAutoDetect={handleAutoDetect}
-          isAutoDetecting={isAutoDetecting}
           onSelectMainFile={handleSelectMainFile}
           onSelectSecondaryFile={handleSelectSecondaryFile}
           onLoadMainFile={loadMainFile}
