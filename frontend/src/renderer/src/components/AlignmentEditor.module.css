@@ -16,12 +16,25 @@
 
 /* Track Headers Sidebar */
 .headersSidebar {
-  width: 180px;
+  min-width: 120px;
+  max-width: 400px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-surface);
   border-right: 1px solid var(--border);
+}
+
+/* Resize Divider */
+.resizeDivider {
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  margin-left: -3px;
+  margin-right: -1px;
 }
 
 .rulerSpacer {
@@ -33,7 +46,7 @@
 .trackHeader {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--space-2);
   padding: var(--space-2);
   padding-left: calc(var(--space-2) + var(--border-accent-width));
@@ -50,8 +63,10 @@
 }
 
 .trackInfo {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-2);
 }
 
@@ -127,7 +142,7 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  margin-left: auto;
+  flex-shrink: 0;
   border-radius: var(--radius-xs);
   border: 1px solid rgba(91, 158, 229, 0.6);
   background-color: transparent;
@@ -220,26 +235,11 @@
   height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-emphasis) var(--bg-surface);
+  scrollbar-width: none;
 }
 
 .waveformScroll::-webkit-scrollbar {
-  height: 8px;
-}
-
-.waveformScroll::-webkit-scrollbar-track {
-  background: var(--bg-surface);
-  border-radius: var(--radius-sm);
-}
-
-.waveformScroll::-webkit-scrollbar-thumb {
-  background: var(--border-emphasis);
-  border-radius: var(--radius-sm);
-}
-
-.waveformScroll::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  display: none;
 }
 
 .waveformContent {

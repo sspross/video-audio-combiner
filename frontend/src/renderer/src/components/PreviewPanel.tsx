@@ -140,7 +140,6 @@ export function PreviewPanel({
           ) : (
             <Wand2 size={14} />
           )}
-          Guess Offset
         </button>
 
         {/* Offset Display */}

@@ -219,13 +219,6 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
     [store]
   )
 
-  const handleTitleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      store.setExportTitle(e.target.value)
-    },
-    [store]
-  )
-
   const isExporting = exportStep === 'exporting'
   const isDone = exportStep === 'done'
   const isError = exportStep === 'error'
@@ -244,22 +237,24 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        {/* Step indicators */}
-        <div className={styles.steps}>
-          <div className={`${styles.step} ${styles.completed}`}>
-            <span className={styles.stepLabel}>Files & Tracks</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={`${styles.step} ${styles.completed}`}>
-            <span className={styles.stepLabel}>Analyze</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={`${styles.step} ${styles.completed}`}>
-            <span className={styles.stepLabel}>Edit</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={`${styles.step} ${styles.active}`}>
-            <span className={styles.stepLabel}>Export</span>
+        {/* Header with steps */}
+        <div className={styles.modalHeader}>
+          <div className={styles.steps}>
+            <div className={`${styles.step} ${styles.completed}`}>
+              <span className={styles.stepLabel}>Files & Tracks</span>
+            </div>
+            <ChevronRight size={16} className={styles.stepArrow} />
+            <div className={`${styles.step} ${styles.completed}`}>
+              <span className={styles.stepLabel}>Analyze</span>
+            </div>
+            <ChevronRight size={16} className={styles.stepArrow} />
+            <div className={`${styles.step} ${styles.completed}`}>
+              <span className={styles.stepLabel}>Edit</span>
+            </div>
+            <ChevronRight size={16} className={styles.stepArrow} />
+            <div className={`${styles.step} ${styles.active}`}>
+              <span className={styles.stepLabel}>Export</span>
+            </div>
           </div>
         </div>
 
@@ -275,23 +270,6 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                 </div>
                 <div className={styles.trackInfoCard}>
                   <div className={styles.trackInfoRow}>
-                    <span className={styles.trackInfoLabel}>Codec</span>
-                    <span className={styles.trackInfoValue}>{trackCodec}</span>
-                  </div>
-                  <div className={styles.trackInfoRow}>
-                    <span className={styles.trackInfoLabel}>Channels</span>
-                    <span className={styles.trackInfoValue}>{trackChannels}</span>
-                  </div>
-                  <div className={styles.trackInfoRow}>
-                    <span className={styles.trackInfoLabel}>Duration</span>
-                    <span className={styles.trackInfoValue}>{trackDuration}</span>
-                  </div>
-                  <div className={styles.trackInfoRow}>
-                    <span className={styles.trackInfoLabel}>Offset</span>
-                    <span className={styles.trackInfoValueHighlight}>{formatOffset(store.offsetMs)}</span>
-                  </div>
-                  <div className={styles.trackInfoRowEditable}>
-                    <span className={styles.trackInfoLabel}>Language</span>
                     {isOtherLanguage ? (
                       <input
                         type="text"
@@ -315,16 +293,15 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                         <option value={OTHER_LANGUAGE}>Other...</option>
                       </select>
                     )}
-                  </div>
-                  <div className={styles.trackInfoRowEditable}>
-                    <span className={styles.trackInfoLabel}>Title</span>
-                    <input
-                      type="text"
-                      className={styles.inputInline}
-                      value={exportTitle}
-                      onChange={handleTitleChange}
-                      placeholder="Track title"
-                    />
+                    <div className={styles.trackInfoCompact}>
+                      <span>{trackCodec}</span>
+                      <span className={styles.infoDot}>•</span>
+                      <span>{trackChannels}</span>
+                      <span className={styles.infoDot}>•</span>
+                      <span>{trackDuration}</span>
+                      <span className={styles.infoDot}>•</span>
+                      <span className={styles.offsetValue}>{formatOffset(store.offsetMs)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -344,9 +321,9 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                       {exportMode === 'add-to-original' && <div className={styles.radioButtonDot} />}
                     </div>
                     <div className={styles.optionTileContent}>
-                      <div className={styles.optionTileHeader}>Add track to original file</div>
-                      <div className={styles.optionTileDescription}>
-                        Adds the aligned audio track directly to the main video file
+                      <div className={styles.optionTileHeader}>Add track to original main movie file</div>
+                      <div className={styles.optionTileDescriptionPath} title={store.mainFilePath || ''}>
+                        {store.mainFilePath}
                       </div>
                     </div>
                   </button>

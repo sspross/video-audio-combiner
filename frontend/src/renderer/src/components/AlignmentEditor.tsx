@@ -66,7 +66,6 @@ function TimelineRuler({ duration, pixelsPerSecond, offsetPx, totalWidth }: Time
 interface TrackHeaderProps {
   title: string
   details: string
-  duration?: number
   isMuted: boolean
   onMuteToggle: () => void
   hasFile: boolean
@@ -81,7 +80,6 @@ function formatDuration(seconds: number): string {
 function TrackHeader({
   title,
   details,
-  duration,
   isMuted,
   onMuteToggle,
   hasFile
@@ -107,19 +105,14 @@ function TrackHeader({
           )}
         </div>
       </div>
-      <div className={styles.trackMeta}>
-        <span className={`${styles.durationBadge} ${!hasFile || !duration ? styles.badgeDisabled : ''}`}>
-          {duration !== undefined && duration > 0 ? formatDuration(duration) : '—:——'}
-        </span>
-        <button
-          className={`${styles.muteButton} ${isMuted ? styles.muted : ''} ${!hasFile ? styles.controlDisabled : ''}`}
-          onClick={onMuteToggle}
-          title={isMuted ? 'Unmute' : 'Mute'}
-          disabled={!hasFile}
-        >
-          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-        </button>
-      </div>
+      <button
+        className={`${styles.muteButton} ${isMuted ? styles.muted : ''} ${!hasFile ? styles.controlDisabled : ''}`}
+        onClick={onMuteToggle}
+        title={isMuted ? 'Unmute' : 'Mute'}
+        disabled={!hasFile}
+      >
+        {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+      </button>
     </div>
   )
 }
@@ -133,9 +126,11 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
   const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(false)
   const [containerWidth, setContainerWidth] = useState(0)
+  const [sidebarWidth, setSidebarWidth] = useState(220)
   const scrollRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const justFinishedDragging = useRef(false)
+  const isDraggingDivider = useRef(false)
 
   // Track scroll container width for minimum content width
   useEffect(() => {
@@ -157,7 +152,7 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
   const hasAnyFiles = hasMainFile || hasSecondaryFile
 
   // Get audio track display info (title + details)
-  const getTrackDisplayInfo = (track: { index: number; title?: string | null; language?: string | null; codec?: string; channels?: number } | undefined): { title: string; details: string } => {
+  const getTrackDisplayInfo = (track: { index: number; title?: string | null; language?: string | null; codec?: string; channels?: number; duration_seconds?: number } | undefined): { title: string; details: string } => {
     if (!track) return { title: 'No track', details: '—' }
 
     // Title: Language uppercase or Track N fallback
@@ -165,11 +160,12 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
       ? track.language.toUpperCase()
       : `Track ${track.index + 1}`
 
-    // Details: Title - CODEC - Nch (dash separator)
+    // Details: Title - CODEC - Nch - Duration (dash separator)
     const parts: string[] = []
     if (track.title) parts.push(track.title)
     if (track.codec) parts.push(track.codec.toUpperCase())
     if (track.channels) parts.push(`${track.channels}ch`)
+    if (track.duration_seconds) parts.push(formatDuration(track.duration_seconds))
 
     return {
       title,
@@ -209,8 +205,6 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
 
   const mainDuration =
     store.mainTracks[store.selectedMainTrackIndex]?.duration_seconds || 0
-  const secondaryDuration =
-    store.secondaryTracks[store.selectedSecondaryTrackIndex]?.duration_seconds || 0
 
   const displayMainPixelWidth = displayMainPeaks.length * pixelsPerPeak
   const pixelsPerSecond = mainDuration > 0 ? displayMainPixelWidth / mainDuration : 0
@@ -297,6 +291,38 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [store])
+
+  // Handle sidebar resize divider drag
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDraggingDivider.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingDivider.current || !containerRef.current) return
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const newWidth = e.clientX - containerRect.left
+      setSidebarWidth(Math.max(120, Math.min(400, newWidth)))
+    }
+
+    const handleMouseUp = () => {
+      if (isDraggingDivider.current) {
+        isDraggingDivider.current = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
 
   // Scroll to cursor when zoom changes
   const handleZoomChange = useCallback(
@@ -404,13 +430,12 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
       {/* Main content area with headers and waveforms */}
       <div className={styles.mainContent}>
         {/* Track Headers Sidebar */}
-        <div className={styles.headersSidebar}>
+        <div className={styles.headersSidebar} style={{ width: sidebarWidth }}>
           {/* Spacer to align with timeline ruler */}
           <div className={styles.rulerSpacer} />
           <TrackHeader
             title={mainTrackInfo.title}
             details={mainTrackInfo.details}
-            duration={mainDuration}
             isMuted={store.isMainAudioMuted}
             onMuteToggle={store.toggleMainAudioMute}
             hasFile={hasMainFile}
@@ -418,12 +443,17 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
           <TrackHeader
             title={secondaryTrackInfo.title}
             details={secondaryTrackInfo.details}
-            duration={secondaryDuration}
             isMuted={store.isSecondaryAudioMuted}
             onMuteToggle={store.toggleSecondaryAudioMute}
             hasFile={hasSecondaryFile}
           />
         </div>
+
+        {/* Resize Divider */}
+        <div
+          className={styles.resizeDivider}
+          onMouseDown={handleDividerMouseDown}
+        />
 
         {/* Unified Waveform Area */}
         <div className={styles.waveformArea}>

@@ -45,19 +45,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  width: 36px;
   height: 28px;
-  padding: 0 var(--space-3);
+  padding: 0;
   border-radius: var(--radius-xs);
   background-color: transparent;
   border: 1px solid var(--info);
   cursor: pointer;
   color: var(--info);
-  font-size: 12px;
-  font-weight: 500;
-  font-family: var(--font-mono);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   transition: all 150ms ease;
 }
 
@@ -92,17 +87,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--warning);
+  width: 36px;
   height: 28px;
-  padding: 0 var(--space-3);
+  padding: 0;
   border-radius: var(--radius-xs);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--warning);
   cursor: pointer;
   transition: all 150ms ease;

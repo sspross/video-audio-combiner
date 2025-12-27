@@ -70,6 +70,10 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  color: var(--text-secondary);
+  color: var(--accent);
   font-size: 13px;
+}
+
+.loadingState span {
+  color: var(--text-secondary);
 }

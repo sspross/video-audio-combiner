@@ -1,25 +1,41 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--bg-elevated);
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 10vh;
+  align-items: stretch;
+  justify-content: stretch;
   z-index: 1000;
-  backdrop-filter: blur(4px);
 }
 
 .modal {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  width: 480px;
-  max-width: 90vw;
-  max-height: 85vh;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* Header */
+.modalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
+  padding-top: 18px; /* Room for macOS traffic lights */
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+}
+
+.appTitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* Steps */
@@ -28,9 +44,6 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
 }
 
 .step {
@@ -68,6 +81,7 @@
   padding: var(--space-6);
   flex: 1;
   overflow-y: auto;
+  -webkit-app-region: no-drag;
 }
 
 .stepContent {
@@ -196,12 +210,23 @@
   line-height: 1.4;
 }
 
+.optionTileDescriptionPath {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
 /* Track Info Card */
 .trackInfoCard {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xs);
-  padding: var(--space-2) 0;
+  padding: 0;
 }
 
 .trackInfoRow {
@@ -209,6 +234,25 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-2) var(--space-3);
+}
+
+/* Compact track info line */
+.trackInfoCompact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.infoDot {
+  color: var(--text-tertiary);
+}
+
+.offsetValue {
+  color: var(--warning);
 }
 
 .trackInfoRowEditable {
@@ -379,6 +423,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--accent);
 }
 
 .successIcon {
@@ -408,7 +453,7 @@
 }
 
 .taskItem.completed {
-  color: var(--text-primary);
+  color: var(--success);
 }
 
 .taskItem.active {
@@ -452,10 +497,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border);
   background-color: var(--bg-surface);
   flex-shrink: 0;
+  -webkit-app-region: no-drag;
 }
 
 .spacer {

@@ -13,13 +13,13 @@ interface SetupWizardProps {
   onLoadSecondaryFile: (path: string) => void
 }
 
-function formatTrackInfo(track: AudioTrack): { title: string; details: string; duration: string } {
+function formatTrackInfo(track: AudioTrack): { title: string; details: string } {
   // Title: Language uppercase or Track N fallback
   const title = track.language
     ? track.language.toUpperCase()
     : `Track ${track.index + 1}`
 
-  // Details: Title - CODEC - Nch (dash separator)
+  // Details: Title - CODEC - Nch - Duration (dash separator)
   const parts: string[] = []
   if (track.title) parts.push(track.title)
   parts.push(track.codec.toUpperCase())
@@ -28,12 +28,11 @@ function formatTrackInfo(track: AudioTrack): { title: string; details: string; d
   // Duration formatted
   const mins = Math.floor(track.duration_seconds / 60)
   const secs = Math.floor(track.duration_seconds % 60)
-  const duration = `${mins}:${secs.toString().padStart(2, '0')}`
+  parts.push(`${mins}:${secs.toString().padStart(2, '0')}`)
 
   return {
     title,
-    details: parts.join(' - '),
-    duration
+    details: parts.join(' - ')
   }
 }
 
@@ -204,26 +203,28 @@ export function SetupWizard({
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        {/* Step indicators */}
-        <div className={styles.steps}>
-          <div
-            className={`${styles.step} ${currentStep === 'files-tracks' ? styles.active : ''} ${isFilesComplete && isTracksComplete ? styles.completed : ''}`}
-          >
-            <span className={styles.stepLabel}>Files & Tracks</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div
-            className={`${styles.step} ${currentStep === 'analyzing' ? styles.active : ''} ${isAnalyzeComplete ? styles.completed : ''}`}
-          >
-            <span className={styles.stepLabel}>Analyze</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={styles.step}>
-            <span className={styles.stepLabel}>Edit</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={styles.step}>
-            <span className={styles.stepLabel}>Export</span>
+        {/* Header with steps */}
+        <div className={styles.modalHeader}>
+          <div className={styles.steps}>
+            <div
+              className={`${styles.step} ${currentStep === 'files-tracks' ? styles.active : ''} ${isFilesComplete && isTracksComplete ? styles.completed : ''}`}
+            >
+              <span className={styles.stepLabel}>Files & Tracks</span>
+            </div>
+            <ChevronRight size={16} className={styles.stepArrow} />
+            <div
+              className={`${styles.step} ${currentStep === 'analyzing' ? styles.active : ''} ${isAnalyzeComplete ? styles.completed : ''}`}
+            >
+              <span className={styles.stepLabel}>Analyze</span>
+            </div>
+            <ChevronRight size={16} className={styles.stepArrow} />
+            <div className={styles.step}>
+              <span className={styles.stepLabel}>Edit</span>
+            </div>
+            <ChevronRight size={16} className={styles.stepArrow} />
+            <div className={styles.step}>
+              <span className={styles.stepLabel}>Export</span>
+            </div>
           </div>
         </div>
 
@@ -231,10 +232,9 @@ export function SetupWizard({
         <div className={styles.content}>
           {currentStep === 'files-tracks' && (
             <div className={styles.stepContent}>
-              <div className={styles.fileSelectors}>
-                {/* Main Video Column */}
-                <div className={styles.fileSelector}>
-                  {/* File Selection */}
+              <div className={styles.gridLayout}>
+                {/* Row 1: Main Video | Arrow | Main Audio */}
+                <div className={styles.gridItem}>
                   <div className={styles.fileSelectorHeader}>
                     <Film size={20} className={styles.fileSelectorIcon} />
                     <span className={styles.fileSelectorLabel}>Main Video</span>
@@ -260,9 +260,14 @@ export function SetupWizard({
                       <span className={styles.dropZoneText}>Browse</span>
                     </div>
                   )}
+                </div>
 
-                  {/* Track Selection */}
-                  <div className={`${styles.fileSelectorHeader} ${styles.trackHeader}`}>
+                <div className={styles.gridArrow}>
+                  <ChevronRight size={20} />
+                </div>
+
+                <div className={styles.gridItem}>
+                  <div className={styles.fileSelectorHeader}>
                     <Volume2 size={20} className={styles.fileSelectorIcon} />
                     <span className={styles.fileSelectorLabel}>Main Audio</span>
                   </div>
@@ -283,7 +288,6 @@ export function SetupWizard({
                               <span className={styles.trackTileHeader}>{info.title}</span>
                               <span className={styles.trackTileDescription}>{info.details}</span>
                             </span>
-                            <span className={styles.trackTileDuration}>{info.duration}</span>
                           </button>
                         )
                       })}
@@ -293,9 +297,8 @@ export function SetupWizard({
                   )}
                 </div>
 
-                {/* Second Video Column */}
-                <div className={styles.fileSelector}>
-                  {/* File Selection */}
+                {/* Row 2: Second Video | Arrow | Audio to Align and Add */}
+                <div className={styles.gridItem}>
                   <div className={styles.fileSelectorHeader}>
                     <Film size={20} className={styles.fileSelectorIcon} />
                     <span className={styles.fileSelectorLabel}>Second Video</span>
@@ -321,11 +324,16 @@ export function SetupWizard({
                       <span className={styles.dropZoneText}>Browse</span>
                     </div>
                   )}
+                </div>
 
-                  {/* Track Selection */}
-                  <div className={`${styles.fileSelectorHeader} ${styles.trackHeader}`}>
+                <div className={styles.gridArrow}>
+                  <ChevronRight size={20} />
+                </div>
+
+                <div className={styles.gridItem}>
+                  <div className={styles.fileSelectorHeader}>
                     <Volume2 size={20} className={styles.fileSelectorIcon} />
-                    <span className={styles.fileSelectorLabel}>Second Audio</span>
+                    <span className={styles.fileSelectorLabel}>Audio to Align and Add</span>
                   </div>
                   {hasSecondaryFile && hasSecondaryTracks ? (
                     <div className={styles.trackTiles}>
@@ -344,7 +352,6 @@ export function SetupWizard({
                               <span className={styles.trackTileHeader}>{info.title}</span>
                               <span className={styles.trackTileDescription}>{info.details}</span>
                             </span>
-                            <span className={styles.trackTileDuration}>{info.duration}</span>
                           </button>
                         )
                       })}
@@ -430,7 +437,19 @@ export function SetupWizard({
           {currentStep === 'analyzing' && (
             <button
               className={styles.continueButton}
-              onClick={() => store.setShowSetupWizard(false)}
+              onClick={() => {
+                // Calculate middle of video
+                const mainTrack = store.mainTracks[store.selectedMainTrackIndex]
+                const durationMs = (mainTrack?.duration_seconds || 0) * 1000
+                const middleMs = durationMs / 2
+
+                // Set cursor and preview to middle of video
+                store.setCursorPosition(middleMs)
+                store.setPreviewStartTime(middleMs)
+
+                // Hide wizard to show editor
+                store.setShowSetupWizard(false)
+              }}
               disabled={!allAnalysisDone}
             >
               Continue
