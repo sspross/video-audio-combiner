@@ -198,6 +198,10 @@
   gap: var(--space-2);
 }
 
+.fileSelectorHeader.trackHeader {
+  margin-top: var(--space-4);
+}
+
 .fileSelectorIcon {
   color: var(--text-tertiary);
 }
@@ -304,6 +308,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+/* Track Placeholder - shown when no file selected */
+.trackPlaceholder {
+  min-height: 52px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .trackTile {

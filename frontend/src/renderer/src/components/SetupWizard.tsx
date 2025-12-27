@@ -99,10 +99,8 @@ export function SetupWizard({
   }, [currentStep])
 
   const handleBack = useCallback(() => {
-    if (currentStep === 'track-selection') {
-      store.setSetupWizardStep('files')
-    } else if (currentStep === 'analyzing') {
-      // Go back to track selection and reset all analysis state
+    if (currentStep === 'analyzing') {
+      // Go back to files-tracks and reset all analysis state
       store.setMainAnalysisStep('pending')
       store.setSecondaryAnalysisStep('pending')
       store.setAlignmentDetectionStep('idle')
@@ -112,7 +110,7 @@ export function SetupWizard({
       store.setSecondaryPeaks([])
       store.setOffset(0)
       store.setConfidence(0)
-      store.setSetupWizardStep('track-selection')
+      store.setSetupWizardStep('files-tracks')
     }
   }, [currentStep, store])
 
@@ -200,15 +198,9 @@ export function SetupWizard({
         {/* Step indicators */}
         <div className={styles.steps}>
           <div
-            className={`${styles.step} ${currentStep === 'files' ? styles.active : ''} ${isFilesComplete ? styles.completed : ''}`}
+            className={`${styles.step} ${currentStep === 'files-tracks' ? styles.active : ''} ${isFilesComplete && isTracksComplete ? styles.completed : ''}`}
           >
-            <span className={styles.stepLabel}>Files</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div
-            className={`${styles.step} ${currentStep === 'track-selection' ? styles.active : ''} ${isTracksComplete ? styles.completed : ''}`}
-          >
-            <span className={styles.stepLabel}>Tracks</span>
+            <span className={styles.stepLabel}>Files & Tracks</span>
           </div>
           <ChevronRight size={16} className={styles.stepArrow} />
           <div
@@ -220,11 +212,12 @@ export function SetupWizard({
 
         {/* Content */}
         <div className={styles.content}>
-          {currentStep === 'files' && (
+          {currentStep === 'files-tracks' && (
             <div className={styles.stepContent}>
               <div className={styles.fileSelectors}>
-                {/* Main Video */}
+                {/* Main Video Column */}
                 <div className={styles.fileSelector}>
+                  {/* File Selection */}
                   <div className={styles.fileSelectorHeader}>
                     <Film size={20} className={styles.fileSelectorIcon} />
                     <span className={styles.fileSelectorLabel}>Main Video</span>
@@ -250,10 +243,42 @@ export function SetupWizard({
                       <span className={styles.dropZoneText}>Browse</span>
                     </div>
                   )}
+
+                  {/* Track Selection */}
+                  <div className={`${styles.fileSelectorHeader} ${styles.trackHeader}`}>
+                    <Volume2 size={20} className={styles.fileSelectorIcon} />
+                    <span className={styles.fileSelectorLabel}>Main Audio</span>
+                  </div>
+                  {hasMainFile && hasMainTracks ? (
+                    <div className={styles.trackTiles}>
+                      {store.mainTracks.map((track) => {
+                        const info = formatTrackInfo(track)
+                        return (
+                          <button
+                            key={track.index}
+                            className={`${styles.trackTile} ${store.selectedMainTrackIndex === track.index ? styles.trackTileSelected : ''}`}
+                            onClick={() => store.setSelectedMainTrack(track.index)}
+                          >
+                            <span className={styles.radioButton}>
+                              {store.selectedMainTrackIndex === track.index && <span className={styles.radioButtonDot} />}
+                            </span>
+                            <span className={styles.trackTileContent}>
+                              <span className={styles.trackTileHeader}>{info.title}</span>
+                              <span className={styles.trackTileDescription}>{info.details}</span>
+                            </span>
+                            <span className={styles.trackTileDuration}>{info.duration}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.trackPlaceholder} />
+                  )}
                 </div>
 
-                {/* Second Video */}
+                {/* Second Video Column */}
                 <div className={styles.fileSelector}>
+                  {/* File Selection */}
                   <div className={styles.fileSelectorHeader}>
                     <Film size={20} className={styles.fileSelectorIcon} />
                     <span className={styles.fileSelectorLabel}>Second Video</span>
@@ -279,68 +304,37 @@ export function SetupWizard({
                       <span className={styles.dropZoneText}>Browse</span>
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {currentStep === 'track-selection' && (
-            <div className={styles.stepContent}>
-              <div className={styles.trackSelectors}>
-                <div className={styles.trackSelector}>
-                  <div className={styles.fileSelectorHeader}>
+                  {/* Track Selection */}
+                  <div className={`${styles.fileSelectorHeader} ${styles.trackHeader}`}>
                     <Volume2 size={20} className={styles.fileSelectorIcon} />
-                    <span className={styles.fileSelectorLabel}>Main Video Audio</span>
+                    <span className={styles.fileSelectorLabel}>Second Audio</span>
                   </div>
-                  <div className={styles.trackTiles}>
-                    {store.mainTracks.map((track) => {
-                      const info = formatTrackInfo(track)
-                      return (
-                        <button
-                          key={track.index}
-                          className={`${styles.trackTile} ${store.selectedMainTrackIndex === track.index ? styles.trackTileSelected : ''}`}
-                          onClick={() => store.setSelectedMainTrack(track.index)}
-                        >
-                          <span className={styles.radioButton}>
-                            {store.selectedMainTrackIndex === track.index && <span className={styles.radioButtonDot} />}
-                          </span>
-                          <span className={styles.trackTileContent}>
-                            <span className={styles.trackTileHeader}>{info.title}</span>
-                            <span className={styles.trackTileDescription}>{info.details}</span>
-                          </span>
-                          <span className={styles.trackTileDuration}>{info.duration}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className={styles.trackSelector}>
-                  <div className={styles.fileSelectorHeader}>
-                    <Volume2 size={20} className={styles.fileSelectorIcon} />
-                    <span className={styles.fileSelectorLabel}>Second Video Audio</span>
-                  </div>
-                  <div className={styles.trackTiles}>
-                    {store.secondaryTracks.map((track) => {
-                      const info = formatTrackInfo(track)
-                      return (
-                        <button
-                          key={track.index}
-                          className={`${styles.trackTile} ${store.selectedSecondaryTrackIndex === track.index ? styles.trackTileSelected : ''}`}
-                          onClick={() => store.setSelectedSecondaryTrack(track.index)}
-                        >
-                          <span className={styles.radioButton}>
-                            {store.selectedSecondaryTrackIndex === track.index && <span className={styles.radioButtonDot} />}
-                          </span>
-                          <span className={styles.trackTileContent}>
-                            <span className={styles.trackTileHeader}>{info.title}</span>
-                            <span className={styles.trackTileDescription}>{info.details}</span>
-                          </span>
-                          <span className={styles.trackTileDuration}>{info.duration}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  {hasSecondaryFile && hasSecondaryTracks ? (
+                    <div className={styles.trackTiles}>
+                      {store.secondaryTracks.map((track) => {
+                        const info = formatTrackInfo(track)
+                        return (
+                          <button
+                            key={track.index}
+                            className={`${styles.trackTile} ${store.selectedSecondaryTrackIndex === track.index ? styles.trackTileSelected : ''}`}
+                            onClick={() => store.setSelectedSecondaryTrack(track.index)}
+                          >
+                            <span className={styles.radioButton}>
+                              {store.selectedSecondaryTrackIndex === track.index && <span className={styles.radioButtonDot} />}
+                            </span>
+                            <span className={styles.trackTileContent}>
+                              <span className={styles.trackTileHeader}>{info.title}</span>
+                              <span className={styles.trackTileDescription}>{info.details}</span>
+                            </span>
+                            <span className={styles.trackTileDuration}>{info.duration}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.trackPlaceholder} />
+                  )}
                 </div>
               </div>
             </div>
@@ -401,23 +395,18 @@ export function SetupWizard({
 
         {/* Footer */}
         <div className={styles.footer}>
-          {(currentStep === 'track-selection' || currentStep === 'analyzing') && (
+          {currentStep === 'analyzing' && (
             <button className={styles.backButton} onClick={handleBack}>
               Back
             </button>
           )}
           <div className={styles.spacer} />
-          {currentStep === 'files' && (
+          {currentStep === 'files-tracks' && (
             <button
               className={styles.continueButton}
-              onClick={() => store.setSetupWizardStep('track-selection')}
+              onClick={handleStartAnalysis}
               disabled={!canProceedFromFiles}
             >
-              Continue
-            </button>
-          )}
-          {currentStep === 'track-selection' && (
-            <button className={styles.continueButton} onClick={handleStartAnalysis}>
               Continue
             </button>
           )}

@@ -340,7 +340,7 @@ export function AlignmentEditor({
   // Handle open wizard button
   const handleOpenWizard = useCallback(() => {
     store.setShowSetupWizard(true)
-    store.setSetupWizardStep('files')
+    store.setSetupWizardStep('files-tracks')
   }, [store])
 
   // Determine what to show in waveform areas

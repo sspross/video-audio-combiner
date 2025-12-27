@@ -66,7 +66,7 @@ const initialState: ProjectState = {
   previewDurationSeconds: 15,
   // Setup wizard state
   showSetupWizard: true,
-  setupWizardStep: 'files'
+  setupWizardStep: 'files-tracks'
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({

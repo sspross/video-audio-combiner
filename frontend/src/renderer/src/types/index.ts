@@ -57,7 +57,7 @@ export type AnalysisStep = 'idle' | 'pending' | 'extracting' | 'waveform'
 
 export type AlignmentDetectionStep = 'idle' | 'detecting' | 'done' | 'error'
 
-export type SetupWizardStep = 'files' | 'track-selection' | 'analyzing'
+export type SetupWizardStep = 'files-tracks' | 'analyzing'
 
 export interface ProjectState {
   mainFilePath: string | null
