@@ -558,18 +558,6 @@
   flex-shrink: 0;
 }
 
-.spinnerIcon {
-  color: var(--accent);
-  flex-shrink: 0;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .progressBarContainer {
   width: 100%;
 }
@@ -625,11 +613,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.mainSpinner {
-  color: var(--accent);
-  animation: spin 1s linear infinite;
 }
 
 .successIcon {

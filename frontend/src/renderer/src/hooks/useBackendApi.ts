@@ -126,18 +126,23 @@ export function useBackendApi() {
       durationSeconds: number,
       offsetMs: number,
       muteMainAudio: boolean = true,
-      muteSecondaryAudio: boolean = false
+      muteSecondaryAudio: boolean = false,
+      signal?: AbortSignal
     ): Promise<PreviewResponse> => {
       if (!apiClient) throw new Error('Backend not ready')
-      const response = await apiClient.post('/preview', {
-        video_path: videoPath,
-        audio_path: audioPath,
-        start_time_seconds: startTimeSeconds,
-        duration_seconds: durationSeconds,
-        offset_ms: offsetMs,
-        mute_main_audio: muteMainAudio,
-        mute_secondary_audio: muteSecondaryAudio
-      })
+      const response = await apiClient.post(
+        '/preview',
+        {
+          video_path: videoPath,
+          audio_path: audioPath,
+          start_time_seconds: startTimeSeconds,
+          duration_seconds: durationSeconds,
+          offset_ms: offsetMs,
+          mute_main_audio: muteMainAudio,
+          mute_secondary_audio: muteSecondaryAudio
+        },
+        { signal }
+      )
       return response.data
     },
     []

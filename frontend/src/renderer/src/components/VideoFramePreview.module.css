@@ -41,17 +41,3 @@
   justify-content: center;
   pointer-events: none;
 }
-
-.spinner {
-  color: var(--text-secondary);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}

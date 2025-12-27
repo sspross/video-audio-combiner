@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
+import { WaveformSpinner } from './components/WaveformSpinner'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
 import { SetupWizard } from './components/SetupWizard'
@@ -18,6 +19,9 @@ function App() {
   const [previewVersion, setPreviewVersion] = useState(0)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
   const [isAutoDetecting, setIsAutoDetecting] = useState(false)
+
+  // Abort controller for preview generation
+  const previewAbortControllerRef = useRef<AbortController | null>(null)
 
   // Track which files we've already analyzed
   const analyzedMainRef = useRef<string | null>(null)
@@ -160,6 +164,11 @@ function App() {
   const handlePreviewRequest = useCallback(async () => {
     if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
 
+    // Cancel any existing preview generation
+    previewAbortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    previewAbortControllerRef.current = abortController
+
     setIsGeneratingPreview(true)
 
     try {
@@ -170,16 +179,37 @@ function App() {
         store.previewDurationSeconds,
         store.offsetMs,
         store.isMainAudioMuted,
-        store.isSecondaryAudioMuted
+        store.isSecondaryAudioMuted,
+        abortController.signal
       )
-      setPreviewPath(result.preview_path)
-      setPreviewVersion((v) => v + 1)
+      if (!abortController.signal.aborted) {
+        setPreviewPath(result.preview_path)
+        setPreviewVersion((v) => v + 1)
+      }
     } catch (err) {
-      store.setError(err instanceof Error ? err.message : 'Preview generation failed')
+      if (!abortController.signal.aborted) {
+        store.setError(err instanceof Error ? err.message : 'Preview generation failed')
+      }
     } finally {
-      setIsGeneratingPreview(false)
+      if (!abortController.signal.aborted) {
+        setIsGeneratingPreview(false)
+      }
+      if (previewAbortControllerRef.current === abortController) {
+        previewAbortControllerRef.current = null
+      }
     }
   }, [store.mainFilePath, store.secondaryWavPath, store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
+
+  const handleStopPreviewGeneration = useCallback(() => {
+    previewAbortControllerRef.current?.abort()
+    previewAbortControllerRef.current = null
+    setIsGeneratingPreview(false)
+  }, [])
+
+  // Clear stale preview when preview parameters change
+  useEffect(() => {
+    setPreviewPath(null)
+  }, [store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted])
 
   const handleExport = useCallback(async () => {
     if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
@@ -234,7 +264,7 @@ function App() {
   if (!api.isReady) {
     return (
       <div className={styles.loadingScreen}>
-        <Loader2 className={styles.spinner} size={48} />
+        <WaveformSpinner size="lg" />
         <span>Starting backend...</span>
         {store.error && <span className={styles.errorText}>{store.error}</span>}
       </div>
@@ -256,6 +286,7 @@ function App() {
           isGeneratingPreview={isGeneratingPreview}
           onPreviewRequest={handlePreviewRequest}
           onPreviewEnded={() => setPreviewPath(null)}
+          onStopGeneration={handleStopPreviewGeneration}
           extractFrame={api.extractFrame}
         />
       </div>

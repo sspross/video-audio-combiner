@@ -626,17 +626,6 @@
   color: var(--text-secondary);
 }
 
-.spinner {
-  color: var(--bg-deep);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Disabled states */
 .disabled {
   opacity: 0.4;

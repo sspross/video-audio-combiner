@@ -1,0 +1,67 @@
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bar {
+  background-color: var(--accent);
+  border-radius: 1px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Stagger animation: center peaks first, then ripples outward */
+.bar:nth-child(3) {
+  animation-delay: 0s;
+}
+.bar:nth-child(2),
+.bar:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.bar:nth-child(1),
+.bar:nth-child(5) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Size: small (14px) - for buttons */
+.sm {
+  width: 14px;
+  height: 14px;
+  gap: 1px;
+}
+.sm .bar {
+  width: 2px;
+  height: 14px;
+}
+
+/* Size: medium (32px) - for overlays */
+.md {
+  width: 32px;
+  height: 32px;
+  gap: 2px;
+}
+.md .bar {
+  width: 4px;
+  height: 32px;
+}
+
+/* Size: large (48px) - for modals */
+.lg {
+  width: 48px;
+  height: 48px;
+  gap: 3px;
+}
+.lg .bar {
+  width: 6px;
+  height: 48px;
+}

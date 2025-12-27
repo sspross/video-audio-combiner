@@ -1,5 +1,6 @@
-import { Play, Loader2, Video } from 'lucide-react'
-import { VideoFramePreview } from './VideoFramePreview'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { Play, Pause, Video } from 'lucide-react'
+import { VideoFramePreview, VideoFramePreviewHandle } from './VideoFramePreview'
 import { useProjectStore } from '../stores/projectStore'
 import type { FrameResponse } from '../types'
 import styles from './PreviewPanel.module.css'
@@ -10,6 +11,7 @@ interface PreviewPanelProps {
   isGeneratingPreview: boolean
   onPreviewRequest: () => void
   onPreviewEnded: () => void
+  onStopGeneration?: () => void
   extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
 }
 
@@ -26,10 +28,72 @@ export function PreviewPanel({
   isGeneratingPreview,
   onPreviewRequest,
   onPreviewEnded,
+  onStopGeneration,
   extractFrame
 }: PreviewPanelProps) {
   const store = useProjectStore()
   const hasWaveforms = store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0
+  const videoPreviewRef = useRef<VideoFramePreviewHandle>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  const handlePlayingChange = useCallback((playing: boolean) => {
+    setIsPlaying(playing)
+  }, [])
+
+  const handlePlayPauseClick = useCallback(() => {
+    if (isGeneratingPreview) {
+      // Stop generation
+      onStopGeneration?.()
+    } else if (isPlaying) {
+      // Pause playback
+      videoPreviewRef.current?.pause()
+    } else if (previewPath) {
+      // Resume playback
+      videoPreviewRef.current?.resume()
+    } else {
+      // Start generating and playing preview
+      onPreviewRequest()
+    }
+  }, [isGeneratingPreview, isPlaying, previewPath, onPreviewRequest, onStopGeneration])
+
+  // Keyboard listener for space bar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not in an input/textarea
+      if (
+        e.code === 'Space' &&
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
+      ) {
+        e.preventDefault()
+        if (hasWaveforms) {
+          handlePlayPauseClick()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handlePlayPauseClick, hasWaveforms])
+
+  const handlePreviewEnded = useCallback(() => {
+    setIsPlaying(false)
+    onPreviewEnded()
+  }, [onPreviewEnded])
+
+  // Determine button icon and state
+  const getButtonIcon = () => {
+    if (isGeneratingPreview || isPlaying) {
+      return <Pause size={16} />
+    }
+    return <Play size={16} style={{ marginLeft: 1 }} />
+  }
+
+  const getButtonTitle = () => {
+    if (isGeneratingPreview) return 'Stop generating'
+    if (isPlaying) return 'Pause preview'
+    if (previewPath) return 'Resume preview'
+    return 'Generate and play preview'
+  }
 
   return (
     <div className={styles.panel}>
@@ -37,12 +101,14 @@ export function PreviewPanel({
       <div className={styles.videoContainer}>
         {store.mainFilePath ? (
           <VideoFramePreview
+            ref={videoPreviewRef}
             videoPath={store.mainFilePath}
             cursorPositionMs={store.cursorPositionMs}
             previewPath={previewPath}
             previewVersion={previewVersion}
             isGeneratingPreview={isGeneratingPreview}
-            onPreviewEnded={onPreviewEnded}
+            onPreviewEnded={handlePreviewEnded}
+            onPlayingChange={handlePlayingChange}
             extractFrame={extractFrame}
           />
         ) : (
@@ -57,21 +123,18 @@ export function PreviewPanel({
       <div className={styles.controls}>
         {/* Preview Time Range */}
         <span className={styles.previewTimeRange}>
-          {formatTimeShort(store.previewStartTimeMs)} – {formatTimeShort(store.previewStartTimeMs + store.previewDurationSeconds * 1000)}
+          {formatTimeShort(store.previewStartTimeMs)} –{' '}
+          {formatTimeShort(store.previewStartTimeMs + store.previewDurationSeconds * 1000)}
         </span>
 
-        {/* Play Button */}
+        {/* Play/Pause Button */}
         <button
-          className={styles.playButton}
-          onClick={onPreviewRequest}
-          disabled={!hasWaveforms || isGeneratingPreview}
-          title="Generate preview"
+          className={`${styles.playButton} ${isGeneratingPreview || isPlaying ? styles.active : ''}`}
+          onClick={handlePlayPauseClick}
+          disabled={!hasWaveforms}
+          title={getButtonTitle()}
         >
-          {isGeneratingPreview ? (
-            <Loader2 size={16} className={styles.spinner} />
-          ) : (
-            <Play size={16} style={{ marginLeft: 1 }} />
-          )}
+          {getButtonIcon()}
         </button>
       </div>
     </div>

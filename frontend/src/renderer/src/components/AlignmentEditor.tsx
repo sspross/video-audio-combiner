@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, Wand2, Volume2, VolumeX, FolderOpen, RotateCcw, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
+import { Wand2, Volume2, VolumeX, FolderOpen, RotateCcw, Download, CheckCircle, AlertCircle, Grid3X3 } from 'lucide-react'
+import { WaveformSpinner } from './WaveformSpinner'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
 import { PreviewRangeSelector } from './PreviewRangeSelector'
@@ -541,7 +542,7 @@ export function AlignmentEditor({
             title="Auto-detect alignment"
           >
             {isAutoDetecting ? (
-              <Loader2 size={14} className={styles.spinner} />
+              <WaveformSpinner size="sm" />
             ) : (
               <Wand2 size={14} />
             )}
@@ -570,7 +571,7 @@ export function AlignmentEditor({
           )}
           {exportStatus === 'exporting' && (
             <button className={styles.exportButton} disabled>
-              <Loader2 size={14} className={styles.spinner} />
+              <WaveformSpinner size="sm" />
               Exporting...
             </button>
           )}

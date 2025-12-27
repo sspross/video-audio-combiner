@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react'
-import { Upload, ChevronRight, Film, Check, Loader2, X, Volume2, Circle, AlertCircle } from 'lucide-react'
+import { Upload, ChevronRight, Film, Check, X, Volume2, Circle, AlertCircle } from 'lucide-react'
+import { WaveformSpinner } from './WaveformSpinner'
 import { useProjectStore } from '../stores/projectStore'
 import { useBackendApi } from '../hooks/useBackendApi'
 import type { AudioTrack } from '../types'
@@ -325,7 +326,7 @@ export function SetupWizard({
                   {allAnalysisDone ? (
                     <Check size={48} className={styles.successIcon} />
                   ) : (
-                    <Loader2 size={48} className={styles.mainSpinner} />
+                    <WaveformSpinner size="lg" />
                   )}
                 </div>
 

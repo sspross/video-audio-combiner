@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { X, RotateCcw } from 'lucide-react'
+import { WaveformSpinner } from './WaveformSpinner'
 import styles from './VideoPreview.module.css'
 
 interface VideoPreviewProps {
@@ -61,7 +62,7 @@ export function VideoPreview({
       <div className={styles.videoContainer}>
         {isLoading ? (
           <div className={styles.loadingState}>
-            <div className={styles.spinner} />
+            <WaveformSpinner size="md" />
             <span>Generating preview...</span>
           </div>
         ) : (
