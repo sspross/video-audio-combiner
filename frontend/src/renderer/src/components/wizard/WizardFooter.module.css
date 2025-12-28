@@ -1,0 +1,30 @@
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--wizard-footer-padding-v) var(--wizard-footer-padding-h);
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}

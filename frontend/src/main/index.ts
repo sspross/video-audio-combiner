@@ -73,6 +73,29 @@ ipcMain.handle('dialog:saveFile', async (_event, options) => {
   return result.canceled ? null : result.filePath
 })
 
+ipcMain.handle('dialog:showExportSuccess', async (_event, outputPath: string) => {
+  const result = await dialog.showMessageBox(mainWindow!, {
+    type: 'info',
+    title: 'Export Complete',
+    message: 'Export finished.',
+    buttons: ['Reveal in Finder', 'Done'],
+    defaultId: 0
+  })
+  if (result.response === 0) {
+    shell.showItemInFolder(outputPath)
+  }
+})
+
+ipcMain.handle('dialog:showExportError', async (_event, errorMessage: string) => {
+  await dialog.showMessageBox(mainWindow!, {
+    type: 'error',
+    title: 'Export Failed',
+    message: 'Failed to merge audio track',
+    detail: errorMessage,
+    buttons: ['OK']
+  })
+})
+
 ipcMain.handle('backend:getPort', () => {
   return pythonBackend?.getPort() || null
 })

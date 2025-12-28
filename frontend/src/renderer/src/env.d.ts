@@ -11,6 +11,8 @@ interface ElectronAPI {
   getBackendPort: () => Promise<number | null>
   isBackendReady: () => Promise<boolean>
   getPathForFile: (file: File) => string
+  showExportSuccess: (outputPath: string) => Promise<void>
+  showExportError: (errorMessage: string) => Promise<void>
 }
 
 interface Window {

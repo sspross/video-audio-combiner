@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { AlertCircle, ChevronRight } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { WaveformSpinner } from './components/WaveformSpinner'
 import { PreviewPanel } from './components/PreviewPanel'
 import { AlignmentEditor } from './components/AlignmentEditor'
 import { SetupWizard } from './components/SetupWizard'
 import { ExportModal } from './components/ExportModal'
+import { WizardSteps, WIZARD_STEPS } from './components/wizard'
 import { useProjectStore } from './stores/projectStore'
 import { useBackendApi } from './hooks/useBackendApi'
 import styles from './App.module.css'
@@ -269,23 +270,11 @@ function App() {
     <div className={styles.app}>
       {/* Header - Step Bar */}
       <header className={styles.header}>
-        <div className={styles.steps}>
-          <div className={`${styles.step} ${styles.completed}`}>
-            <span className={styles.stepLabel}>Files & Tracks</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={`${styles.step} ${styles.completed}`}>
-            <span className={styles.stepLabel}>Analyze</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={`${styles.step} ${styles.active}`}>
-            <span className={styles.stepLabel}>Edit</span>
-          </div>
-          <ChevronRight size={16} className={styles.stepArrow} />
-          <div className={styles.step}>
-            <span className={styles.stepLabel}>Export</span>
-          </div>
-        </div>
+        <WizardSteps
+          steps={[...WIZARD_STEPS]}
+          currentStep="edit"
+          completedSteps={['files-tracks']}
+        />
       </header>
 
       {/* Video Preview - takes available space */}

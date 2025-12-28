@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronRight, Check, CheckCircle, Circle, AlertCircle, FolderOpen, Music } from 'lucide-react'
+import { FolderOpen, Music } from 'lucide-react'
 import { WaveformSpinner } from './WaveformSpinner'
+import { WizardSteps, WizardHeader, WizardFooter, WizardButton, WIZARD_STEPS } from './wizard'
 import { useProjectStore } from '../stores/projectStore'
 import { useBackendApi } from '../hooks/useBackendApi'
 import type { ExportMode } from '../types'
@@ -71,15 +72,14 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
   const store = useProjectStore()
   const api = useBackendApi()
 
-  const exportStep = store.exportStep
   const exportMode = store.exportMode
   const exportLanguage = store.exportLanguage
   const exportTitle = store.exportTitle
-  const exportError = store.exportError
 
-  // Local state for "Other" language mode
+  // Local state for "Other" language mode and exporting status
   const [isOtherLanguage, setIsOtherLanguage] = useState(false)
   const [customLanguageCode, setCustomLanguageCode] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
 
   // Initialize language and title from secondary track when opening
   useEffect(() => {
@@ -116,10 +116,8 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
   }, [store.showExportModal])
 
   const handleBack = useCallback(() => {
-    if (exportStep === 'options') {
-      store.resetExportModal()
-    }
-  }, [exportStep, store])
+    store.resetExportModal()
+  }, [store])
 
   const handleExport = useCallback(async () => {
     if (!store.mainFilePath || !store.secondaryWavPath || !api.isReady) return
@@ -140,8 +138,7 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
       outputPath = store.mainFilePath
     }
 
-    store.setExportStep('exporting')
-    store.setExportError(null)
+    setIsExporting(true)
 
     try {
       const result = await api.mergeAudio(
@@ -155,14 +152,16 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
       )
 
       if (result.success) {
-        store.setExportStep('done')
+        setIsExporting(false)
+        await window.electron.showExportSuccess(result.output_path || outputPath)
+        // Stay on export settings screen for potential re-export
       } else {
-        store.setExportStep('error')
-        store.setExportError('Export failed')
+        setIsExporting(false)
+        await window.electron.showExportError('Export failed')
       }
     } catch (err) {
-      store.setExportStep('error')
-      store.setExportError(err instanceof Error ? err.message : 'Export failed')
+      setIsExporting(false)
+      await window.electron.showExportError(err instanceof Error ? err.message : 'Export failed')
     }
   }, [
     store.mainFilePath,
@@ -176,10 +175,6 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
     store,
     onRequestSavePath
   ])
-
-  const handleDone = useCallback(() => {
-    store.resetExportModal()
-  }, [store])
 
   const handleModeChange = useCallback(
     (mode: ExportMode) => {
@@ -219,10 +214,6 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
     [store]
   )
 
-  const isExporting = exportStep === 'exporting'
-  const isDone = exportStep === 'done'
-  const isError = exportStep === 'error'
-
   // Get secondary track info for display
   const secondaryTrack = useMemo(() => {
     return store.secondaryTracks[store.selectedSecondaryTrackIndex]
@@ -238,30 +229,17 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
     <div className={styles.overlay}>
       <div className={styles.modal}>
         {/* Header with steps */}
-        <div className={styles.modalHeader}>
-          <div className={styles.steps}>
-            <div className={`${styles.step} ${styles.completed}`}>
-              <span className={styles.stepLabel}>Files & Tracks</span>
-            </div>
-            <ChevronRight size={16} className={styles.stepArrow} />
-            <div className={`${styles.step} ${styles.completed}`}>
-              <span className={styles.stepLabel}>Analyze</span>
-            </div>
-            <ChevronRight size={16} className={styles.stepArrow} />
-            <div className={`${styles.step} ${styles.completed}`}>
-              <span className={styles.stepLabel}>Edit</span>
-            </div>
-            <ChevronRight size={16} className={styles.stepArrow} />
-            <div className={`${styles.step} ${styles.active}`}>
-              <span className={styles.stepLabel}>Export</span>
-            </div>
-          </div>
-        </div>
+        <WizardHeader>
+          <WizardSteps
+            steps={[...WIZARD_STEPS]}
+            currentStep="export"
+            completedSteps={['files-tracks', 'edit']}
+          />
+        </WizardHeader>
 
         {/* Content */}
         <div className={styles.content}>
-          {exportStep === 'options' && (
-            <div className={styles.stepContent}>
+          <div className={styles.stepContent}>
               {/* New Audio Track Section */}
               <div className={styles.section}>
                 <div className={styles.sectionLabel}>
@@ -314,6 +292,20 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                 </div>
                 <div className={styles.optionTiles}>
                   <button
+                    className={`${styles.optionTile} ${exportMode === 'create-new' ? styles.optionTileSelected : ''}`}
+                    onClick={() => handleModeChange('create-new')}
+                  >
+                    <div className={styles.radioButton}>
+                      {exportMode === 'create-new' && <div className={styles.radioButtonDot} />}
+                    </div>
+                    <div className={styles.optionTileContent}>
+                      <div className={styles.optionTileHeader}>Create new merged file</div>
+                      <div className={styles.optionTileDescription}>
+                        Creates a copy of the main movie file with the new audio track added
+                      </div>
+                    </div>
+                  </button>
+                  <button
                     className={`${styles.optionTile} ${exportMode === 'add-to-original' ? styles.optionTileSelected : ''}`}
                     onClick={() => handleModeChange('add-to-original')}
                   >
@@ -327,92 +319,30 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                       </div>
                     </div>
                   </button>
-                  <button
-                    className={`${styles.optionTile} ${exportMode === 'create-new' ? styles.optionTileSelected : ''}`}
-                    onClick={() => handleModeChange('create-new')}
-                  >
-                    <div className={styles.radioButton}>
-                      {exportMode === 'create-new' && <div className={styles.radioButtonDot} />}
-                    </div>
-                    <div className={styles.optionTileContent}>
-                      <div className={styles.optionTileHeader}>Create new merged file</div>
-                      <div className={styles.optionTileDescription}>
-                        Creates a copy of the video with the new audio track added
-                      </div>
-                    </div>
-                  </button>
                 </div>
               </div>
             </div>
-          )}
-
-          {(isExporting || isDone || isError) && (
-            <div className={styles.stepContent}>
-              <div className={styles.exportingContent}>
-                {/* Spinner or Status Icon */}
-                <div className={styles.spinnerContainer}>
-                  {isExporting && <WaveformSpinner size="lg" />}
-                  {isDone && <Check size={48} className={styles.successIcon} />}
-                  {isError && <AlertCircle size={48} className={styles.errorIcon} />}
-                </div>
-
-                {/* Task List */}
-                <ul className={styles.taskList}>
-                  <li
-                    className={`${styles.taskItem} ${isDone || isError ? styles.completed : ''} ${isExporting ? styles.active : ''}`}
-                  >
-                    {isDone || isError ? (
-                      <CheckCircle size={18} className={styles.taskCheckIcon} />
-                    ) : (
-                      <Circle size={18} className={styles.taskPendingIcon} />
-                    )}
-                    <span>Preparing files</span>
-                  </li>
-                  <li
-                    className={`${styles.taskItem} ${isDone ? styles.completed : ''} ${isError ? styles.failed : ''} ${isExporting ? styles.active : ''}`}
-                  >
-                    {isDone ? (
-                      <CheckCircle size={18} className={styles.taskCheckIcon} />
-                    ) : isError ? (
-                      <AlertCircle size={18} className={styles.taskErrorIcon} />
-                    ) : (
-                      <Circle size={18} className={styles.taskPendingIcon} />
-                    )}
-                    <span>Merging audio track</span>
-                  </li>
-                  <li className={`${styles.taskItem} ${isDone ? styles.completed : ''}`}>
-                    {isDone ? (
-                      <CheckCircle size={18} className={styles.taskCheckIcon} />
-                    ) : (
-                      <Circle size={18} className={styles.taskPendingIcon} />
-                    )}
-                    <span>Finalizing</span>
-                  </li>
-                </ul>
-
-                {isError && exportError && <p className={styles.errorMessage}>{exportError}</p>}
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
 
         {/* Footer */}
-        <div className={styles.footer}>
-          <button className={styles.backButton} onClick={handleBack} disabled={isExporting}>
-            Back
-          </button>
-          <div className={styles.spacer} />
-          {exportStep === 'options' && (
-            <button className={styles.exportButton} onClick={handleExport}>
-              Export
-            </button>
-          )}
-          {(isDone || isError) && (
-            <button className={styles.doneButton} onClick={handleDone}>
-              Done
-            </button>
-          )}
-        </div>
+        <WizardFooter
+          leftContent={
+            <WizardButton variant="secondary" onClick={handleBack} disabled={isExporting}>
+              Back
+            </WizardButton>
+          }
+          rightContent={
+            <>
+              {isExporting && (
+                <span className={styles.exportingStatus}>Writing movie file...</span>
+              )}
+              <WizardButton onClick={handleExport} disabled={isExporting}>
+                {isExporting && <WaveformSpinner size="sm" className={styles.buttonSpinner} />}
+                Export
+              </WizardButton>
+            </>
+          }
+        />
       </div>
     </div>
   )

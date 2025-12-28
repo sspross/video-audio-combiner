@@ -3,6 +3,7 @@ import { Volume2, VolumeX, FolderOpen, Grid3X3 } from 'lucide-react'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
 import { PreviewRangeSelector } from './PreviewRangeSelector'
+import { WizardFooter, WizardButton } from './wizard'
 import { useProjectStore } from '../stores/projectStore'
 import styles from './AlignmentEditor.module.css'
 
@@ -353,10 +354,10 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
     store.setSetupWizardStep('files-tracks')
   }, [store])
 
-  // Handle back button - opens wizard on analyzing step
+  // Handle back button - opens wizard (analysis state preserved for quick return)
   const handleBack = useCallback(() => {
     store.setShowSetupWizard(true)
-    store.setSetupWizardStep('analyzing')
+    store.setSetupWizardStep('files-tracks')
   }, [store])
 
   // Handle continue button - opens export modal
@@ -538,51 +539,50 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
       </div>
 
       {/* Toolbar - always visible */}
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
-          <button
-            className={styles.backButton}
+      <WizardFooter
+        leftContent={
+          <WizardButton
+            variant="secondary"
             onClick={handleBack}
             disabled={store.isLoading}
           >
             Back
-          </button>
-        </div>
-
-        <div className={styles.toolbarCenter}>
-          <div className={`${styles.zoomControls} ${!hasWaveforms ? styles.disabled : ''}`}>
-            <input
-              type="range"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={zoom}
-              onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
-              className={styles.zoomSlider}
+          </WizardButton>
+        }
+        centerContent={
+          <>
+            <div className={`${styles.zoomControls} ${!hasWaveforms ? styles.disabled : ''}`}>
+              <input
+                type="range"
+                min="0.1"
+                max="10"
+                step="0.1"
+                value={zoom}
+                onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                className={styles.zoomSlider}
+                disabled={!hasWaveforms}
+              />
+              <span className={styles.zoomValue}>{zoom.toFixed(1)}x</span>
+            </div>
+            <button
+              className={`${styles.gridToggle} ${showGrid ? styles.gridActive : ''} ${!hasWaveforms ? styles.disabled : ''}`}
+              onClick={() => setShowGrid(!showGrid)}
+              title="Toggle grid"
               disabled={!hasWaveforms}
-            />
-            <span className={styles.zoomValue}>{zoom.toFixed(1)}x</span>
-          </div>
-          <button
-            className={`${styles.gridToggle} ${showGrid ? styles.gridActive : ''} ${!hasWaveforms ? styles.disabled : ''}`}
-            onClick={() => setShowGrid(!showGrid)}
-            title="Toggle grid"
-            disabled={!hasWaveforms}
-          >
-            <Grid3X3 size={14} />
-          </button>
-        </div>
-
-        <div className={styles.toolbarRight}>
-          <button
-            className={styles.continueButton}
+            >
+              <Grid3X3 size={14} />
+            </button>
+          </>
+        }
+        rightContent={
+          <WizardButton
             onClick={handleContinue}
             disabled={!canContinue}
           >
             Continue
-          </button>
-        </div>
-      </div>
+          </WizardButton>
+        }
+      />
     </div>
   )
 }

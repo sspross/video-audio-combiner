@@ -20,6 +20,8 @@ export interface ElectronAPI {
   getBackendPort: () => Promise<number | null>
   isBackendReady: () => Promise<boolean>
   getPathForFile: (file: File) => string
+  showExportSuccess: (outputPath: string) => Promise<void>
+  showExportError: (errorMessage: string) => Promise<void>
 }
 
 const api: ElectronAPI = {
@@ -27,7 +29,9 @@ const api: ElectronAPI = {
   saveFile: (options) => ipcRenderer.invoke('dialog:saveFile', options),
   getBackendPort: () => ipcRenderer.invoke('backend:getPort'),
   isBackendReady: () => ipcRenderer.invoke('backend:isReady'),
-  getPathForFile: (file: File) => webUtils.getPathForFile(file)
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
+  showExportSuccess: (outputPath) => ipcRenderer.invoke('dialog:showExportSuccess', outputPath),
+  showExportError: (errorMessage) => ipcRenderer.invoke('dialog:showExportError', errorMessage)
 }
 
 contextBridge.exposeInMainWorld('electron', api)

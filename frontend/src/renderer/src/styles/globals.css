@@ -67,6 +67,11 @@
   /* Control sizes */
   --control-height: 36px;
 
+  /* Wizard Component Variables */
+  --wizard-button-height: 28px;
+  --wizard-footer-padding-v: var(--space-3);  /* 12px vertical */
+  --wizard-footer-padding-h: var(--space-4);  /* 16px horizontal */
+
   /* Fonts */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
