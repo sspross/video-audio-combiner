@@ -1,5 +1,7 @@
 # Video Audio Combiner
 
+> **Disclaimer:** This is a 100% vibe coding experiment. From code, commits to the tutorial video.
+
 Desktop tool to merge audio tracks from different video sources with automatic audio synchronization via waveform analysis.
 
 ```
