@@ -15,6 +15,8 @@ Desktop tool to merge audio tracks from different video sources with automatic a
 └──────────┘
 ```
 
+https://github.com/user-attachments/assets/5b51eec3-4ed6-4e18-b92d-7df1246f4507
+
 ## Prerequisites
 
 - Python 3.11+
