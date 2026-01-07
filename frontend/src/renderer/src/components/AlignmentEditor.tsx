@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Volume2, VolumeX, FolderOpen, Grid3X3 } from 'lucide-react'
+import { Volume2, VolumeX, FolderOpen, Grid3X3, ScanLine, Loader2 } from 'lucide-react'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
 import { PreviewRangeSelector } from './PreviewRangeSelector'
+import { SegmentOverlay } from './SegmentOverlay'
 import { WizardFooter, WizardButton } from './wizard'
 import { useProjectStore } from '../stores/projectStore'
+import { useBackendApi } from '../hooks/useBackendApi'
 import styles from './AlignmentEditor.module.css'
 
 // Helper to calculate tick interval based on zoom level
@@ -124,6 +126,7 @@ interface AlignmentEditorProps {
 
 export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
   const store = useProjectStore()
+  const api = useBackendApi()
   const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(false)
   const [containerWidth, setContainerWidth] = useState(0)
@@ -360,6 +363,40 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
     store.setSetupWizardStep('files-tracks')
   }, [store])
 
+  // Handle drift detection
+  const handleDetectDrift = useCallback(async () => {
+    if (!store.mainWavPath || !store.secondaryWavPath) return
+
+    store.setDriftDetectionStep('scanning')
+    store.setError(null)
+
+    try {
+      const result = await api.detectDriftPoints(store.mainWavPath, store.secondaryWavPath)
+
+      // Convert response segments to store segments with IDs
+      const segmentsWithIds = result.segments.map((seg, index) => ({
+        id: `segment-${index}`,
+        start_time_ms: seg.start_time_ms,
+        end_time_ms: seg.end_time_ms,
+        offset_ms: seg.offset_ms,
+        confidence: seg.confidence,
+        status: 'aligned' as const
+      }))
+
+      store.setDriftPoints(result.drift_points)
+      store.setSegments(segmentsWithIds)
+      store.setDriftDetectionStep('done')
+
+      // Enable multi-segment mode if drift was detected
+      if (result.drift_points.length > 0) {
+        store.setUseMultiSegment(true)
+      }
+    } catch (err) {
+      store.setDriftDetectionStep('error')
+      store.setError(err instanceof Error ? err.message : 'Failed to detect drift points')
+    }
+  }, [api, store])
+
   // Handle continue button - opens export modal
   const handleContinue = useCallback(() => {
     // Initialize language from secondary track
@@ -517,6 +554,15 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
                     {secondaryWaveformContent()}
                   </div>
                 </div>
+
+                {/* Segment overlay for multi-segment alignment */}
+                {store.useMultiSegment && (
+                  <SegmentOverlay
+                    pixelsPerSecond={pixelsPerSecond}
+                    baseOffset={scrollPaddingPx + mainStartOffset}
+                    totalHeight={200}
+                  />
+                )}
               </div>
             </div>
           ) : (
@@ -571,6 +617,25 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
               disabled={!hasWaveforms}
             >
               <Grid3X3 size={14} />
+            </button>
+            <button
+              className={`${styles.driftButton} ${store.useMultiSegment ? styles.driftActive : ''} ${!hasWaveforms || store.driftDetectionStep === 'scanning' ? styles.disabled : ''}`}
+              onClick={handleDetectDrift}
+              title="Detect drift points (for sources with different cuts)"
+              disabled={!hasWaveforms || store.driftDetectionStep === 'scanning'}
+            >
+              {store.driftDetectionStep === 'scanning' ? (
+                <Loader2 size={14} className={styles.spinningIcon} />
+              ) : (
+                <ScanLine size={14} />
+              )}
+              <span className={styles.driftButtonText}>
+                {store.driftDetectionStep === 'scanning'
+                  ? 'Scanning...'
+                  : store.driftPoints.length > 0
+                    ? `${store.driftPoints.length} drift${store.driftPoints.length > 1 ? 's' : ''}`
+                    : 'Detect Drift'}
+              </span>
             </button>
           </>
         }

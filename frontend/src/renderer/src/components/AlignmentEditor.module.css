@@ -515,3 +515,58 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* Drift detection button */
+.driftButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: 1px solid var(--border-emphasis);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.driftButton:hover:not(:disabled) {
+  background: var(--bg-surface);
+  border-color: #404040;
+  color: var(--text-primary);
+}
+
+.driftButton.driftActive {
+  background: transparent;
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.driftButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.driftButtonText {
+  white-space: nowrap;
+}
+
+.spinningIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

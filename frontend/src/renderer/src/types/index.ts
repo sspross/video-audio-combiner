@@ -45,6 +45,38 @@ export interface FrameResponse {
   time_seconds: number
 }
 
+// Multi-segment alignment types
+
+export interface AudioSegment {
+  id: string
+  start_time_ms: number
+  end_time_ms: number
+  offset_ms: number
+  confidence: number
+  status: 'pending' | 'analyzing' | 'aligned' | 'error'
+}
+
+export interface DriftPoint {
+  timestamp_ms: number
+  offset_before_ms: number
+  offset_after_ms: number
+  confidence: number
+}
+
+export interface DriftDetectionResponse {
+  drift_points: DriftPoint[]
+  segments: Omit<AudioSegment, 'id' | 'status'>[]
+  scan_duration_seconds: number
+}
+
+export interface CompensateResponse {
+  compensated_path: string
+  total_silence_inserted_ms: number
+  total_trimmed_ms: number
+}
+
+export type DriftDetectionStep = 'idle' | 'scanning' | 'done' | 'error'
+
 export type WorkflowStep =
   | 'select-files'
   | 'select-tracks'
@@ -96,4 +128,11 @@ export interface ProjectState {
   exportMode: ExportMode
   exportLanguage: string
   exportTitle: string
+  // Multi-segment alignment state
+  useMultiSegment: boolean
+  segments: AudioSegment[]
+  driftPoints: DriftPoint[]
+  driftDetectionStep: DriftDetectionStep
+  selectedSegmentId: string | null
+  compensatedWavPath: string | null
 }

@@ -141,10 +141,24 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
     setIsExporting(true)
 
     try {
+      // Determine which audio path and offset to use
+      let audioPath = store.secondaryWavPath
+      let offsetMs = store.offsetMs
+
+      // Handle multi-segment alignment
+      if (store.useMultiSegment && store.segments.length > 1) {
+        // Compensate audio with silence/trim at drift points
+        const compensateResult = await api.compensateAudio(store.secondaryWavPath, store.segments)
+        audioPath = compensateResult.compensated_path
+        store.setCompensatedWavPath(audioPath)
+        // Use the first segment's offset as the base offset
+        offsetMs = store.segments[0].offset_ms
+      }
+
       const result = await api.mergeAudio(
         store.mainFilePath,
-        store.secondaryWavPath,
-        store.offsetMs,
+        audioPath,
+        offsetMs,
         outputPath,
         exportLanguage.toLowerCase() || 'und',
         exportTitle || undefined,
@@ -167,6 +181,8 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
     store.mainFilePath,
     store.secondaryWavPath,
     store.offsetMs,
+    store.useMultiSegment,
+    store.segments,
     exportMode,
     exportLanguage,
     exportTitle,
@@ -281,6 +297,14 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                       <span className={styles.offsetValue}>{formatOffset(store.offsetMs)}</span>
                     </div>
                   </div>
+                  {store.useMultiSegment && store.segments.length > 1 && (
+                    <div className={styles.multiSegmentInfo}>
+                      <span className={styles.multiSegmentBadge}>Multi-segment</span>
+                      <span className={styles.multiSegmentText}>
+                        {store.segments.length} segments, {store.driftPoints.length} drift point{store.driftPoints.length !== 1 ? 's' : ''} will be compensated
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

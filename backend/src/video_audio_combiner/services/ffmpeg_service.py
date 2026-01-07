@@ -6,7 +6,9 @@ import tempfile
 from pathlib import Path
 
 from video_audio_combiner.api.schemas import (
+    AudioSegment,
     AudioTrack,
+    CompensateResponse,
     ExtractResponse,
     FrameResponse,
     MergeResponse,
@@ -414,6 +416,187 @@ class FFmpegService:
             raise ValueError(f"FFmpeg frame extraction failed: {e.stderr}") from e
 
         return FrameResponse(frame_path=str(output_path), time_seconds=time_seconds)
+
+    def compensate_audio(
+        self,
+        audio_path: str,
+        segments: list[AudioSegment],
+        crossfade_ms: int = 50,
+    ) -> CompensateResponse:
+        """Compensate audio for multi-segment alignment.
+
+        Inserts silence or trims audio at segment boundaries to maintain
+        sync when source videos have different cuts.
+
+        The compensation works by calculating the offset difference between
+        consecutive segments. If segment N+1 has a larger negative offset
+        than segment N, it means the secondary audio needs to be lengthened
+        (silence inserted). If smaller, audio needs to be trimmed.
+
+        Args:
+            audio_path: Path to the audio file to compensate.
+            segments: List of segments with their individual offsets.
+            crossfade_ms: Duration of crossfade at segment boundaries.
+
+        Returns:
+            CompensateResponse with path to compensated audio and stats.
+        """
+        audio = Path(audio_path)
+        if not audio.exists():
+            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
+        if len(segments) < 2:
+            # No compensation needed for single segment
+            return CompensateResponse(
+                compensated_path=audio_path,
+                total_silence_inserted_ms=0.0,
+                total_trimmed_ms=0.0,
+            )
+
+        # Sort segments by start time
+        sorted_segments = sorted(segments, key=lambda s: s.start_time_ms)
+
+        # Calculate adjustments needed at each boundary
+        # adjustment = offset_after - offset_before
+        # positive = insert silence, negative = trim
+        adjustments: list[tuple[float, float]] = []  # (timestamp_ms, adjustment_ms)
+        total_silence_ms = 0.0
+        total_trimmed_ms = 0.0
+
+        for i in range(1, len(sorted_segments)):
+            prev_segment = sorted_segments[i - 1]
+            curr_segment = sorted_segments[i]
+
+            # The boundary is at curr_segment.start_time_ms
+            boundary_ms = curr_segment.start_time_ms
+
+            # Calculate adjustment needed
+            # If curr offset is more negative, we need to insert silence
+            # (the secondary audio is shorter than expected)
+            adjustment_ms = prev_segment.offset_ms - curr_segment.offset_ms
+
+            if abs(adjustment_ms) > 0:
+                adjustments.append((boundary_ms, adjustment_ms))
+                if adjustment_ms > 0:
+                    total_silence_ms += adjustment_ms
+                else:
+                    total_trimmed_ms += abs(adjustment_ms)
+
+        if not adjustments:
+            # No actual adjustments needed
+            return CompensateResponse(
+                compensated_path=audio_path,
+                total_silence_inserted_ms=0.0,
+                total_trimmed_ms=0.0,
+            )
+
+        # Generate output path
+        output_path = self.temp_dir / f"compensated_{audio.stem}.wav"
+
+        # Build FFmpeg filter complex for segment processing
+        # We'll split the audio at boundaries and apply delays/trims
+        filter_parts = []
+        concat_inputs = []
+
+        # Track cumulative adjustment for position calculations
+        cumulative_adjustment_ms = 0.0
+
+        for i, (boundary_ms, adjustment_ms) in enumerate(adjustments):
+            # Calculate the actual position in the source audio
+            # (accounting for previous adjustments)
+            source_pos_ms = boundary_ms - cumulative_adjustment_ms
+
+            if i == 0:
+                # First segment: from start to first boundary
+                start_ms = 0
+            else:
+                # Start from previous boundary
+                prev_boundary_ms = adjustments[i - 1][0]
+                prev_adjustment_ms = adjustments[i - 1][1]
+                start_ms = prev_boundary_ms - (
+                    cumulative_adjustment_ms - prev_adjustment_ms
+                )
+                if prev_adjustment_ms < 0:
+                    # Previous was a trim, skip that portion
+                    start_ms += abs(prev_adjustment_ms)
+
+            end_ms = source_pos_ms
+
+            # Add segment filter
+            segment_label = f"seg{i}"
+            filter_parts.append(
+                f"[0:a]atrim=start_sample=0:start={start_ms/1000}:end={end_ms/1000},"
+                f"asetpts=PTS-STARTPTS[{segment_label}]"
+            )
+            concat_inputs.append(f"[{segment_label}]")
+
+            if adjustment_ms > 0:
+                # Insert silence
+                silence_label = f"sil{i}"
+                silence_duration = adjustment_ms / 1000.0
+                filter_parts.append(
+                    f"aevalsrc=0:d={silence_duration}:s=22050:c=mono[{silence_label}]"
+                )
+                concat_inputs.append(f"[{silence_label}]")
+            # For negative adjustment (trim), we skip audio by adjusting the next start
+
+            cumulative_adjustment_ms += adjustment_ms
+
+        # Add final segment (from last boundary to end)
+        last_boundary_ms = adjustments[-1][0]
+        last_adjustment_ms = adjustments[-1][1]
+        final_start_ms = last_boundary_ms - (
+            cumulative_adjustment_ms - last_adjustment_ms
+        )
+        if last_adjustment_ms < 0:
+            final_start_ms += abs(last_adjustment_ms)
+
+        final_label = "segfinal"
+        filter_parts.append(
+            f"[0:a]atrim=start={final_start_ms/1000},asetpts=PTS-STARTPTS[{final_label}]"
+        )
+        concat_inputs.append(f"[{final_label}]")
+
+        # Build concat filter
+        concat_filter = "".join(concat_inputs) + f"concat=n={len(concat_inputs)}:v=0:a=1[out]"
+        filter_parts.append(concat_filter)
+
+        filter_complex = ";".join(filter_parts)
+
+        # Build FFmpeg command
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(audio),
+            "-filter_complex",
+            filter_complex,
+            "-map",
+            "[out]",
+            "-acodec",
+            "pcm_s16le",
+            "-ar",
+            "22050",
+            "-ac",
+            "1",
+            str(output_path),
+        ]
+
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as e:
+            # If complex filter fails, try simpler approach
+            # Just copy with initial offset and let some parts be out of sync
+            raise ValueError(
+                f"FFmpeg audio compensation failed: {e.stderr}. "
+                "The segment boundaries may be too complex to process."
+            ) from e
+
+        return CompensateResponse(
+            compensated_path=str(output_path),
+            total_silence_inserted_ms=total_silence_ms,
+            total_trimmed_ms=total_trimmed_ms,
+        )
 
     def cleanup_temp_files(self) -> None:
         """Remove all temporary files created by this service."""

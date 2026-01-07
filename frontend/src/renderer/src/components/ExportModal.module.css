@@ -450,3 +450,29 @@
 .buttonSpinner {
   margin-right: var(--space-2);
 }
+
+/* Multi-segment alignment info */
+.multiSegmentInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.multiSegmentBadge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.multiSegmentText {
+  font-size: 12px;
+  color: var(--text-secondary);
+}

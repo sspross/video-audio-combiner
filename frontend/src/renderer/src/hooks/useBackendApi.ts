@@ -7,7 +7,10 @@ import type {
   AlignResponse,
   MergeResponse,
   PreviewResponse,
-  FrameResponse
+  FrameResponse,
+  DriftDetectionResponse,
+  CompensateResponse,
+  AudioSegment
 } from '../types'
 
 let apiClient: AxiosInstance | null = null
@@ -162,6 +165,76 @@ export function useBackendApi() {
     []
   )
 
+  // Multi-segment alignment API functions
+
+  const detectSegmentAlignment = useCallback(
+    async (
+      mainWavPath: string,
+      secondaryWavPath: string,
+      startTimeMs: number,
+      endTimeMs: number
+    ): Promise<AlignResponse> => {
+      if (!apiClient) throw new Error('Backend not ready')
+      const response = await apiClient.post('/align/detect-segment', {
+        main_wav_path: mainWavPath,
+        secondary_wav_path: secondaryWavPath,
+        start_time_ms: startTimeMs,
+        end_time_ms: endTimeMs
+      })
+      return response.data
+    },
+    []
+  )
+
+  const detectDriftPoints = useCallback(
+    async (
+      mainWavPath: string,
+      secondaryWavPath: string,
+      options?: {
+        segmentDurationMs?: number
+        stepMs?: number
+        driftThresholdMs?: number
+      }
+    ): Promise<DriftDetectionResponse> => {
+      if (!apiClient) throw new Error('Backend not ready')
+      const response = await apiClient.post(
+        '/align/detect-drift',
+        {
+          main_wav_path: mainWavPath,
+          secondary_wav_path: secondaryWavPath,
+          segment_duration_ms: options?.segmentDurationMs ?? 30000,
+          step_ms: options?.stepMs ?? 15000,
+          drift_threshold_ms: options?.driftThresholdMs ?? 500
+        },
+        { timeout: 600000 } // 10 minutes for long scans
+      )
+      return response.data
+    },
+    []
+  )
+
+  const compensateAudio = useCallback(
+    async (
+      audioPath: string,
+      segments: Pick<AudioSegment, 'start_time_ms' | 'end_time_ms' | 'offset_ms' | 'confidence'>[],
+      crossfadeMs: number = 50
+    ): Promise<CompensateResponse> => {
+      if (!apiClient) throw new Error('Backend not ready')
+      const response = await apiClient.post('/audio/compensate', {
+        audio_path: audioPath,
+        segments: segments.map((seg) => ({
+          start_time_ms: seg.start_time_ms,
+          end_time_ms: seg.end_time_ms,
+          offset_ms: seg.offset_ms,
+          confidence: seg.confidence
+        })),
+        crossfade_ms: crossfadeMs
+      })
+      return response.data
+    },
+    []
+  )
+
   return {
     isReady,
     error,
@@ -171,6 +244,10 @@ export function useBackendApi() {
     detectAlignment,
     mergeAudio,
     generatePreview,
-    extractFrame
+    extractFrame,
+    // Multi-segment alignment
+    detectSegmentAlignment,
+    detectDriftPoints,
+    compensateAudio
   }
 }

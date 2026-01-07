@@ -1,0 +1,85 @@
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.driftMarker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.driftLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #f59e0b 10%,
+    #f59e0b 90%,
+    transparent 100%
+  );
+}
+
+.driftLabel {
+  position: absolute;
+  top: 28px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.driftPositive {
+  color: #4ade80;
+}
+
+.driftNegative {
+  color: #e94560;
+}
+
+.segment {
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  border-left: 1px dashed rgba(255, 255, 255, 0.1);
+  transition: background-color 0.15s ease;
+}
+
+.segment:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.segmentSelected {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  border-left-color: #3b82f6;
+}
+
+.segmentLabel {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 9px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.segmentOffset {
+  font-family: monospace;
+}

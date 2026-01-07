@@ -2,7 +2,10 @@ import { create } from 'zustand'
 import type {
   AlignmentDetectionStep,
   AnalysisStep,
+  AudioSegment,
   AudioTrack,
+  DriftDetectionStep,
+  DriftPoint,
   ExportMode,
   ProjectState,
   SetupWizardStep,
@@ -46,6 +49,17 @@ interface ProjectActions {
   setExportLanguage: (language: string) => void
   setExportTitle: (title: string) => void
   resetExportModal: () => void
+  // Multi-segment alignment actions
+  setUseMultiSegment: (use: boolean) => void
+  setSegments: (segments: AudioSegment[]) => void
+  updateSegment: (id: string, updates: Partial<AudioSegment>) => void
+  addSegment: (segment: AudioSegment) => void
+  removeSegment: (id: string) => void
+  setDriftPoints: (points: DriftPoint[]) => void
+  setDriftDetectionStep: (step: DriftDetectionStep) => void
+  setSelectedSegmentId: (id: string | null) => void
+  setCompensatedWavPath: (path: string | null) => void
+  resetMultiSegment: () => void
 }
 
 const initialState: ProjectState = {
@@ -82,7 +96,14 @@ const initialState: ProjectState = {
   showExportModal: false,
   exportMode: 'create-new',
   exportLanguage: '',
-  exportTitle: ''
+  exportTitle: '',
+  // Multi-segment alignment state
+  useMultiSegment: false,
+  segments: [],
+  driftPoints: [],
+  driftDetectionStep: 'idle',
+  selectedSegmentId: null,
+  compensatedWavPath: null
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
@@ -153,5 +174,31 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
       showExportModal: false,
       exportLanguage: '',
       exportTitle: ''
+    }),
+  // Multi-segment alignment actions
+  setUseMultiSegment: (use) => set({ useMultiSegment: use }),
+  setSegments: (segments) => set({ segments }),
+  updateSegment: (id, updates) =>
+    set((state) => ({
+      segments: state.segments.map((seg) => (seg.id === id ? { ...seg, ...updates } : seg))
+    })),
+  addSegment: (segment) => set((state) => ({ segments: [...state.segments, segment] })),
+  removeSegment: (id) =>
+    set((state) => ({
+      segments: state.segments.filter((seg) => seg.id !== id),
+      selectedSegmentId: state.selectedSegmentId === id ? null : state.selectedSegmentId
+    })),
+  setDriftPoints: (points) => set({ driftPoints: points }),
+  setDriftDetectionStep: (step) => set({ driftDetectionStep: step }),
+  setSelectedSegmentId: (id) => set({ selectedSegmentId: id }),
+  setCompensatedWavPath: (path) => set({ compensatedWavPath: path }),
+  resetMultiSegment: () =>
+    set({
+      useMultiSegment: false,
+      segments: [],
+      driftPoints: [],
+      driftDetectionStep: 'idle',
+      selectedSegmentId: null,
+      compensatedWavPath: null
     })
 }))
