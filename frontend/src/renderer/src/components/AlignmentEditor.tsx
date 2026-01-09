@@ -387,7 +387,7 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
           )}
           <WaveformTrack
             peaks={displayMainPeaks}
-            color="#4ade80"
+            color="#16A34A"
             pixelsPerSecond={pixelsPerSecond}
             isMuted={store.isMainAudioMuted}
           />
@@ -413,7 +413,7 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
           )}
           <WaveformTrack
             peaks={displaySecondaryPeaks}
-            color="#e94560"
+            color="#E85858"
             pixelsPerSecond={pixelsPerSecond}
             isDraggable
             onOffsetChange={handleOffsetChange}

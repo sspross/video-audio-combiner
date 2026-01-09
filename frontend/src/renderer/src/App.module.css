@@ -65,9 +65,9 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-5);
-  background-color: transparent;
+  background-color: rgba(239, 68, 68, 0.08);
   border: 1px solid var(--error);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   color: var(--error);
   z-index: 100;
   font-family: var(--font-mono);
@@ -86,10 +86,10 @@
   font-family: var(--font-mono);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   transition: all 150ms ease;
 }
 
 .errorBanner button:hover {
-  background: rgba(229, 91, 91, 0.12);
+  background: rgba(239, 68, 68, 0.12);
 }

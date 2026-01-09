@@ -48,7 +48,7 @@
   width: 36px;
   height: 28px;
   padding: 0;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   background-color: transparent;
   border: 1px solid var(--info);
   cursor: pointer;
@@ -57,7 +57,7 @@
 }
 
 .playButton:hover {
-  background-color: rgba(91, 158, 229, 0.12);
+  background-color: rgba(59, 130, 246, 0.12);
 }
 
 .playButton:disabled {
@@ -66,7 +66,7 @@
 }
 
 .playButton.active {
-  background-color: rgba(91, 158, 229, 0.12);
+  background-color: rgba(59, 130, 246, 0.12);
 }
 
 .previewTimeRange {
@@ -79,8 +79,8 @@
   color: var(--info);
   background: transparent;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-xs);
-  border: 1px solid rgba(91, 158, 229, 0.4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(59, 130, 246, 0.4);
 }
 
 .guessOffsetButton {
@@ -92,7 +92,7 @@
   width: 36px;
   height: 28px;
   padding: 0;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   color: var(--warning);
   cursor: pointer;
   transition: all 150ms ease;
@@ -117,7 +117,7 @@
   color: var(--warning);
   background: transparent;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   border: 1px solid rgba(245, 166, 35, 0.4);
 }
 
