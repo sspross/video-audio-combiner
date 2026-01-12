@@ -110,7 +110,7 @@ function App() {
         const mainWaveform = await api.generateWaveform(mainExtract.wav_path)
 
         if (store.analysisVersion !== version) return
-        store.setMainPeaks(mainWaveform.peaks)
+        store.setMainPeaks(mainWaveform.peaks, mainWaveform.duration_seconds)
 
         if (store.analysisVersion !== version) return
         store.setMainAnalysisStep('idle')
@@ -153,7 +153,7 @@ function App() {
         const secondaryWaveform = await api.generateWaveform(secondaryExtract.wav_path)
 
         if (store.analysisVersion !== version) return
-        store.setSecondaryPeaks(secondaryWaveform.peaks)
+        store.setSecondaryPeaks(secondaryWaveform.peaks, secondaryWaveform.duration_seconds)
 
         if (store.analysisVersion !== version) return
         store.setSecondaryAnalysisStep('idle')

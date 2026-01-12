@@ -16,8 +16,8 @@ interface ProjectActions {
   setSelectedSecondaryTrack: (index: number) => void
   setMainWavPath: (path: string | null) => void
   setSecondaryWavPath: (path: string | null) => void
-  setMainPeaks: (peaks: number[]) => void
-  setSecondaryPeaks: (peaks: number[]) => void
+  setMainPeaks: (peaks: number[], duration?: number) => void
+  setSecondaryPeaks: (peaks: number[], duration?: number) => void
   setMainAnalysisStep: (step: AnalysisStep) => void
   setSecondaryAnalysisStep: (step: AnalysisStep) => void
   setAlignmentDetectionStep: (step: AlignmentDetectionStep) => void
@@ -59,6 +59,8 @@ const initialState: ProjectState = {
   secondaryWavPath: null,
   mainPeaks: [],
   secondaryPeaks: [],
+  mainPeaksDuration: 0,
+  secondaryPeaksDuration: 0,
   mainAnalysisStep: 'idle',
   secondaryAnalysisStep: 'idle',
   alignmentDetectionStep: 'idle',
@@ -95,6 +97,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
       selectedMainTrackIndex: 0,
       mainWavPath: null,
       mainPeaks: [],
+      mainPeaksDuration: 0,
       mainAnalysisStep: 'idle',
       alignmentDetectionStep: 'idle',
       offsetMs: 0,
@@ -108,6 +111,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
       selectedSecondaryTrackIndex: 0,
       secondaryWavPath: null,
       secondaryPeaks: [],
+      secondaryPeaksDuration: 0,
       secondaryAnalysisStep: 'idle',
       alignmentDetectionStep: 'idle',
       offsetMs: 0,
@@ -118,8 +122,8 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   setSelectedSecondaryTrack: (index) => set({ selectedSecondaryTrackIndex: index }),
   setMainWavPath: (path) => set({ mainWavPath: path }),
   setSecondaryWavPath: (path) => set({ secondaryWavPath: path }),
-  setMainPeaks: (peaks) => set({ mainPeaks: peaks }),
-  setSecondaryPeaks: (peaks) => set({ secondaryPeaks: peaks }),
+  setMainPeaks: (peaks, duration) => set({ mainPeaks: peaks, ...(duration !== undefined && { mainPeaksDuration: duration }) }),
+  setSecondaryPeaks: (peaks, duration) => set({ secondaryPeaks: peaks, ...(duration !== undefined && { secondaryPeaksDuration: duration }) }),
   setMainAnalysisStep: (step) => set({ mainAnalysisStep: step }),
   setSecondaryAnalysisStep: (step) => set({ secondaryAnalysisStep: step }),
   setAlignmentDetectionStep: (step) => set({ alignmentDetectionStep: step }),

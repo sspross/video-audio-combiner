@@ -201,11 +201,24 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
   // At 10x zoom: 2000 * 10 * 3 = 60000px
   const maxCanvasWidth = 60000
   const maxPeaks = Math.min(Math.floor(2000 * zoom), Math.floor(maxCanvasWidth / pixelsPerPeak))
-  const displayMainPeaks = downsamplePeaks(store.mainPeaks, maxPeaks)
-  const displaySecondaryPeaks = downsamplePeaks(store.secondaryPeaks, maxPeaks)
 
-  const mainDuration =
+  // Use actual audio duration from waveform generation (not ffprobe metadata)
+  // This accounts for container start_time offsets that affect the extracted audio length
+  const mainDuration = store.mainPeaksDuration ||
     store.mainTracks[store.selectedMainTrackIndex]?.duration_seconds || 0
+  const secondaryDuration = store.secondaryPeaksDuration ||
+    store.secondaryTracks[store.selectedSecondaryTrackIndex]?.duration_seconds || 0
+
+  // Downsample main peaks to maxPeaks
+  const displayMainPeaks = downsamplePeaks(store.mainPeaks, maxPeaks)
+
+  // Normalize secondary waveform to same time scale as main
+  // This ensures both waveforms have the same time-per-pixel ratio for visual alignment
+  // If secondary is longer, it gets proportionally more display peaks
+  const secondaryTargetPeaks = mainDuration > 0 && secondaryDuration > 0
+    ? Math.round(maxPeaks * (secondaryDuration / mainDuration))
+    : maxPeaks
+  const displaySecondaryPeaks = downsamplePeaks(store.secondaryPeaks, secondaryTargetPeaks)
 
   const displayMainPixelWidth = displayMainPeaks.length * pixelsPerPeak
   const pixelsPerSecond = mainDuration > 0 ? displayMainPixelWidth / mainDuration : 0

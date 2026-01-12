@@ -72,6 +72,8 @@ export interface ProjectState {
   secondaryWavPath: string | null
   mainPeaks: number[]
   secondaryPeaks: number[]
+  mainPeaksDuration: number
+  secondaryPeaksDuration: number
   mainAnalysisStep: AnalysisStep
   secondaryAnalysisStep: AnalysisStep
   alignmentDetectionStep: AlignmentDetectionStep
