@@ -22,9 +22,7 @@ class AlignmentService:
         self.sample_rate = sample_rate
         self.hop_length = hop_length
 
-    def detect_alignment(
-        self, main_wav_path: str, secondary_wav_path: str
-    ) -> AlignResponse:
+    def detect_alignment(self, main_wav_path: str, secondary_wav_path: str) -> AlignResponse:
         """Detect the alignment offset between two audio files.
 
         Uses onset strength envelopes and cross-correlation to find

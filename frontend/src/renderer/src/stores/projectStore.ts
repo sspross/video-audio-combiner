@@ -10,8 +10,9 @@ import type {
 } from '../types'
 
 interface ProjectActions {
-  setMainFile: (path: string, tracks: AudioTrack[]) => void
-  setSecondaryFile: (path: string, tracks: AudioTrack[]) => void
+  setMainFile: (path: string, tracks: AudioTrack[], framerate: number | null) => void
+  setSecondaryFile: (path: string, tracks: AudioTrack[], framerate: number | null) => void
+  setSecondaryStretchInfo: (stretched: boolean, tempoRatio: number | null) => void
   setSelectedMainTrack: (index: number) => void
   setSelectedSecondaryTrack: (index: number) => void
   setMainWavPath: (path: string | null) => void
@@ -63,6 +64,11 @@ const initialState: ProjectState = {
   secondaryPeaksDuration: 0,
   mainAnalysisStep: 'idle',
   secondaryAnalysisStep: 'idle',
+  // Framerate info
+  mainFramerate: null,
+  secondaryFramerate: null,
+  secondaryAudioStretched: false,
+  secondaryTempoRatio: null,
   alignmentDetectionStep: 'idle',
   offsetMs: 0,
   confidence: 0,
@@ -90,10 +96,11 @@ const initialState: ProjectState = {
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   ...initialState,
 
-  setMainFile: (path, tracks) =>
+  setMainFile: (path, tracks, framerate) =>
     set({
       mainFilePath: path || null,
       mainTracks: tracks,
+      mainFramerate: framerate,
       selectedMainTrackIndex: 0,
       mainWavPath: null,
       mainPeaks: [],
@@ -104,18 +111,27 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
       confidence: 0
     }),
 
-  setSecondaryFile: (path, tracks) =>
+  setSecondaryFile: (path, tracks, framerate) =>
     set({
       secondaryFilePath: path || null,
       secondaryTracks: tracks,
+      secondaryFramerate: framerate,
       selectedSecondaryTrackIndex: 0,
       secondaryWavPath: null,
       secondaryPeaks: [],
       secondaryPeaksDuration: 0,
       secondaryAnalysisStep: 'idle',
+      secondaryAudioStretched: false,
+      secondaryTempoRatio: null,
       alignmentDetectionStep: 'idle',
       offsetMs: 0,
       confidence: 0
+    }),
+
+  setSecondaryStretchInfo: (stretched, tempoRatio) =>
+    set({
+      secondaryAudioStretched: stretched,
+      secondaryTempoRatio: tempoRatio
     }),
 
   setSelectedMainTrack: (index) => set({ selectedMainTrackIndex: index }),

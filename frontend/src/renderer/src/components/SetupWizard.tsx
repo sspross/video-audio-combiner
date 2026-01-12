@@ -166,11 +166,11 @@ export function SetupWizard({
   }, [onSelectSecondaryFile])
 
   const handleClearMainFile = useCallback(() => {
-    store.setMainFile('', [])
+    store.setMainFile('', [], null)
   }, [store])
 
   const handleClearSecondaryFile = useCallback(() => {
-    store.setSecondaryFile('', [])
+    store.setSecondaryFile('', [], null)
   }, [store])
 
   // Reset analysis state helper

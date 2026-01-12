@@ -135,6 +135,28 @@
   color: var(--text-tertiary);
 }
 
+.framerateBadge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background-color: rgba(128, 128, 128, 0.15);
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.stretchedBadge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.15);
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .muteButton {
   display: flex;
   align-items: center;

@@ -70,6 +70,9 @@ interface TrackHeaderProps {
   isMuted: boolean
   onMuteToggle: () => void
   hasFile: boolean
+  framerate?: number | null
+  isStretched?: boolean
+  tempoRatio?: number | null
 }
 
 function formatDuration(seconds: number): string {
@@ -78,13 +81,28 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+function formatFramerate(fps: number): string {
+  // Show common framerates nicely
+  if (Math.abs(fps - 23.976) < 0.01) return '23.976'
+  if (Math.abs(fps - 24) < 0.01) return '24'
+  if (Math.abs(fps - 25) < 0.01) return '25'
+  if (Math.abs(fps - 29.97) < 0.01) return '29.97'
+  if (Math.abs(fps - 30) < 0.01) return '30'
+  return fps.toFixed(2)
+}
+
 function TrackHeader({
   title,
   details,
   isMuted,
   onMuteToggle,
-  hasFile
+  hasFile,
+  framerate,
+  isStretched,
+  tempoRatio
 }: TrackHeaderProps) {
+  const stretchPercent = tempoRatio ? Math.abs((1 - 1 / tempoRatio) * 100).toFixed(1) : null
+
   return (
     <div className={styles.trackHeader}>
       <div className={styles.trackInfo}>
@@ -97,6 +115,21 @@ function TrackHeader({
               <span className={styles.fileName} title={details}>
                 {details}
               </span>
+              {/* Framerate badge */}
+              {framerate && (
+                <span className={styles.framerateBadge} title={`Video framerate: ${framerate.toFixed(3)} fps`}>
+                  {formatFramerate(framerate)} fps
+                </span>
+              )}
+              {/* Stretched indicator */}
+              {isStretched && stretchPercent && (
+                <span
+                  className={styles.stretchedBadge}
+                  title={`Audio stretched by ${stretchPercent}% to match main video framerate`}
+                >
+                  ↔ {stretchPercent}%
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -286,19 +319,32 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
     [store]
   )
 
-  // Keyboard navigation
+  // Keyboard navigation for offset adjustment
+  // Up/Down: +10ms / -10ms, Left/Right: +1ms / -1ms
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!containerRef.current?.contains(document.activeElement)) return
+      // Skip if in input/textarea or if container doesn't have focus
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return
+      if (!containerRef.current?.contains(document.activeElement) &&
+          document.activeElement !== document.body) return
 
-      const step = e.shiftKey ? 1 : 10 // 1ms with Shift, 10ms otherwise
-
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        store.setOffset(store.offsetMs - step)
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        store.setOffset(store.offsetMs + step)
+      switch (e.key) {
+        case 'ArrowUp':
+          e.preventDefault()
+          store.setOffset(store.offsetMs + 10)
+          break
+        case 'ArrowDown':
+          e.preventDefault()
+          store.setOffset(store.offsetMs - 10)
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          store.setOffset(store.offsetMs - 1)
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          store.setOffset(store.offsetMs + 1)
+          break
       }
     }
 
@@ -453,6 +499,7 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
             isMuted={store.isMainAudioMuted}
             onMuteToggle={store.toggleMainAudioMute}
             hasFile={hasMainFile}
+            framerate={store.mainFramerate}
           />
           <TrackHeader
             title={secondaryTrackInfo.title}
@@ -460,6 +507,9 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
             isMuted={store.isSecondaryAudioMuted}
             onMuteToggle={store.toggleSecondaryAudioMute}
             hasFile={hasSecondaryFile}
+            framerate={store.secondaryFramerate}
+            isStretched={store.secondaryAudioStretched}
+            tempoRatio={store.secondaryTempoRatio}
           />
         </div>
 

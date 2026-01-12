@@ -41,7 +41,7 @@ function App() {
     store.setMainAnalysisStep('idle')
     try {
       const tracks = await api.getAudioTracks(filePath)
-      store.setMainFile(filePath, tracks.tracks)
+      store.setMainFile(filePath, tracks.tracks, tracks.video_framerate)
       store.setMainAnalysisStep('pending')
     } catch (err) {
       store.setError(err instanceof Error ? err.message : 'Failed to load file')
@@ -59,7 +59,7 @@ function App() {
     store.setSecondaryAnalysisStep('idle')
     try {
       const tracks = await api.getAudioTracks(filePath)
-      store.setSecondaryFile(filePath, tracks.tracks)
+      store.setSecondaryFile(filePath, tracks.tracks, tracks.video_framerate)
       store.setSecondaryAnalysisStep('pending')
     } catch (err) {
       store.setError(err instanceof Error ? err.message : 'Failed to load file')
@@ -141,11 +141,20 @@ function App() {
       store.setError(null)
 
       try {
-        const secondaryExtract = await api.extractAudio(store.secondaryFilePath, store.selectedSecondaryTrackIndex)
+        // Pass main framerate as target to auto-stretch secondary audio if needed
+        const secondaryExtract = await api.extractAudio(
+          store.secondaryFilePath,
+          store.selectedSecondaryTrackIndex,
+          store.mainFramerate ?? undefined
+        )
 
         // Check if stale before each state update
         if (store.analysisVersion !== version) return
         store.setSecondaryWavPath(secondaryExtract.wav_path)
+
+        // Store stretch info
+        if (store.analysisVersion !== version) return
+        store.setSecondaryStretchInfo(secondaryExtract.stretched, secondaryExtract.tempo_ratio)
 
         if (store.analysisVersion !== version) return
         store.setSecondaryAnalysisStep('waveform')
@@ -166,7 +175,7 @@ function App() {
     }
 
     analyzeSecondary()
-  }, [store.secondaryFilePath, store.selectedSecondaryTrackIndex, store.secondaryAnalysisStep, api.isReady])
+  }, [store.secondaryFilePath, store.selectedSecondaryTrackIndex, store.secondaryAnalysisStep, store.mainFramerate, api.isReady])
 
   // Clear analysis refs when analysis is reset (e.g., when going back in wizard)
   useEffect(() => {
@@ -215,15 +224,26 @@ function App() {
         store.offsetMs,
         store.isMainAudioMuted,
         store.isSecondaryAudioMuted,
+        store.secondaryFilePath ?? undefined, // Side-by-side video
         abortController.signal
       )
       if (!abortController.signal.aborted) {
         setPreviewPath(result.preview_path)
         setPreviewVersion((v) => v + 1)
       }
-    } catch (err) {
+    } catch (err: unknown) {
       if (!abortController.signal.aborted) {
-        store.setError(err instanceof Error ? err.message : 'Preview generation failed')
+        // Extract detailed error message from axios response if available
+        let errorMessage = 'Preview generation failed'
+        if (err && typeof err === 'object') {
+          const axiosError = err as { response?: { data?: { detail?: string } }; message?: string }
+          if (axiosError.response?.data?.detail) {
+            errorMessage = axiosError.response.data.detail
+          } else if (axiosError.message) {
+            errorMessage = axiosError.message
+          }
+        }
+        store.setError(errorMessage)
       }
     } finally {
       if (!abortController.signal.aborted) {
@@ -233,7 +253,7 @@ function App() {
         previewAbortControllerRef.current = null
       }
     }
-  }, [store.mainFilePath, store.secondaryWavPath, store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
+  }, [store.mainFilePath, store.secondaryFilePath, store.secondaryWavPath, store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
 
   const handleStopPreviewGeneration = useCallback(() => {
     previewAbortControllerRef.current?.abort()

@@ -11,7 +11,14 @@ interface VideoFramePreviewProps {
   isGeneratingPreview: boolean
   onPreviewEnded?: () => void
   onPlayingChange?: (isPlaying: boolean) => void
-  extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
+  extractFrame: (
+    videoPath: string,
+    timeSeconds: number,
+    secondaryVideoPath?: string,
+    offsetMs?: number
+  ) => Promise<FrameResponse>
+  secondaryVideoPath?: string | null
+  offsetMs?: number
 }
 
 export interface VideoFramePreviewHandle {
@@ -32,7 +39,9 @@ export const VideoFramePreview = forwardRef<VideoFramePreviewHandle, VideoFrameP
       isGeneratingPreview,
       onPreviewEnded,
       onPlayingChange,
-      extractFrame
+      extractFrame,
+      secondaryVideoPath,
+      offsetMs = 0
     },
     ref
   ) {
@@ -84,7 +93,13 @@ export const VideoFramePreview = forwardRef<VideoFramePreviewHandle, VideoFrameP
         setFrameError(null)
 
         try {
-          const response = await extractFrame(videoPath, timeSeconds)
+          // Pass secondary video path and offset for side-by-side frame extraction
+          const response = await extractFrame(
+            videoPath,
+            timeSeconds,
+            secondaryVideoPath ?? undefined,
+            offsetMs
+          )
           setFramePath(response.frame_path)
           setFrameVersion((v) => v + 1)
         } catch (err) {
@@ -95,7 +110,7 @@ export const VideoFramePreview = forwardRef<VideoFramePreviewHandle, VideoFrameP
       }, DEBOUNCE_MS)
 
       return () => clearTimeout(timeoutId)
-    }, [videoPath, cursorPositionMs, hasActivePreview, extractFrame])
+    }, [videoPath, cursorPositionMs, hasActivePreview, extractFrame, secondaryVideoPath, offsetMs])
 
     // Reset frame when video path changes
     useEffect(() => {

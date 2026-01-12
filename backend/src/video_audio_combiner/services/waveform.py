@@ -11,9 +11,7 @@ from video_audio_combiner.api.schemas import WaveformResponse
 class WaveformService:
     """Service for generating waveform visualization data."""
 
-    def generate_peaks(
-        self, wav_path: str, samples_per_second: int = 100
-    ) -> WaveformResponse:
+    def generate_peaks(self, wav_path: str, samples_per_second: int = 100) -> WaveformResponse:
         """Generate waveform peaks data for visualization.
 
         Generates a downsampled representation of the audio waveform

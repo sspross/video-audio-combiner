@@ -28,6 +28,7 @@ class TracksResponse(BaseModel):
     file_path: str
     duration_seconds: float
     tracks: list[AudioTrack]
+    video_framerate: float | None = None
 
 
 class ExtractRequest(BaseModel):
@@ -35,6 +36,7 @@ class ExtractRequest(BaseModel):
 
     file_path: str
     track_index: int
+    target_framerate: float | None = None
 
 
 class ExtractResponse(BaseModel):
@@ -42,6 +44,9 @@ class ExtractResponse(BaseModel):
 
     wav_path: str
     duration_seconds: float
+    source_framerate: float | None = None
+    tempo_ratio: float | None = None
+    stretched: bool = False
 
 
 class WaveformRequest(BaseModel):
@@ -93,7 +98,11 @@ class MergeResponse(BaseModel):
 
 
 class PreviewRequest(BaseModel):
-    """Request to generate a preview clip."""
+    """Request to generate a preview clip.
+
+    If secondary_video_path is provided, generates a side-by-side composite
+    with the main video on the left and secondary on the right.
+    """
 
     video_path: str
     audio_path: str
@@ -102,6 +111,7 @@ class PreviewRequest(BaseModel):
     offset_ms: float
     mute_main_audio: bool = True
     mute_secondary_audio: bool = False
+    secondary_video_path: str | None = None
 
 
 class PreviewResponse(BaseModel):
@@ -112,10 +122,17 @@ class PreviewResponse(BaseModel):
 
 
 class FrameRequest(BaseModel):
-    """Request to extract a single frame from video."""
+    """Request to extract a single frame from video.
+
+    If secondary_video_path is provided, generates a side-by-side composite
+    with the main video on the left and secondary on the right.
+    The secondary frame is extracted at time_seconds - offset_ms.
+    """
 
     video_path: str
     time_seconds: float
+    secondary_video_path: str | None = None
+    offset_ms: float = 0.0
 
 
 class FrameResponse(BaseModel):

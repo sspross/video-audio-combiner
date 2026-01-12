@@ -12,11 +12,15 @@ export interface TracksResponse {
   file_path: string
   duration_seconds: number
   tracks: AudioTrack[]
+  video_framerate: number | null
 }
 
 export interface ExtractResponse {
   wav_path: string
   duration_seconds: number
+  source_framerate: number | null
+  tempo_ratio: number | null
+  stretched: boolean
 }
 
 export interface WaveformResponse {
@@ -76,6 +80,11 @@ export interface ProjectState {
   secondaryPeaksDuration: number
   mainAnalysisStep: AnalysisStep
   secondaryAnalysisStep: AnalysisStep
+  // Framerate info for audio stretching
+  mainFramerate: number | null
+  secondaryFramerate: number | null
+  secondaryAudioStretched: boolean
+  secondaryTempoRatio: number | null
   alignmentDetectionStep: AlignmentDetectionStep
   offsetMs: number
   confidence: number

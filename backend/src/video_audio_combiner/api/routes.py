@@ -44,9 +44,15 @@ async def get_audio_tracks(file_path: str) -> TracksResponse:
 
 @router.post("/analyze/extract", response_model=ExtractResponse)
 async def extract_audio(request: ExtractRequest) -> ExtractResponse:
-    """Extract an audio track to WAV format."""
+    """Extract an audio track to WAV format.
+
+    If target_framerate is provided and differs from source framerate,
+    the audio will be automatically stretched to match the target timing.
+    """
     try:
-        return ffmpeg_service.extract_audio(request.file_path, request.track_index)
+        return ffmpeg_service.extract_audio(
+            request.file_path, request.track_index, request.target_framerate
+        )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except ValueError as e:
@@ -74,9 +80,7 @@ async def detect_alignment(request: AlignRequest) -> AlignResponse:
 
     alignment_service = AlignmentService()
     try:
-        return alignment_service.detect_alignment(
-            request.main_wav_path, request.secondary_wav_path
-        )
+        return alignment_service.detect_alignment(request.main_wav_path, request.secondary_wav_path)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
@@ -102,7 +106,11 @@ async def merge_audio(request: MergeRequest) -> MergeResponse:
 
 @router.post("/preview", response_model=PreviewResponse)
 async def generate_preview(request: PreviewRequest) -> PreviewResponse:
-    """Generate a preview clip with combined audio."""
+    """Generate a preview clip with combined audio.
+
+    If secondary_video_path is provided, generates a side-by-side composite
+    with the main video on the left and secondary on the right.
+    """
     try:
         return ffmpeg_service.generate_preview(
             video_path=request.video_path,
@@ -112,6 +120,7 @@ async def generate_preview(request: PreviewRequest) -> PreviewResponse:
             offset_ms=request.offset_ms,
             mute_main_audio=request.mute_main_audio,
             mute_secondary_audio=request.mute_secondary_audio,
+            secondary_video_path=request.secondary_video_path,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
@@ -121,11 +130,17 @@ async def generate_preview(request: PreviewRequest) -> PreviewResponse:
 
 @router.post("/extract/frame", response_model=FrameResponse)
 async def extract_frame(request: FrameRequest) -> FrameResponse:
-    """Extract a single frame from video at the specified time."""
+    """Extract a single frame from video at the specified time.
+
+    If secondary_video_path is provided, generates a side-by-side composite
+    with the main video on the left and secondary on the right.
+    """
     try:
         return ffmpeg_service.extract_frame(
             video_path=request.video_path,
             time_seconds=request.time_seconds,
+            secondary_video_path=request.secondary_video_path,
+            offset_ms=request.offset_ms,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
