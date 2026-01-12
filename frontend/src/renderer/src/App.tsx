@@ -224,7 +224,6 @@ function App() {
         store.offsetMs,
         store.isMainAudioMuted,
         store.isSecondaryAudioMuted,
-        store.secondaryFilePath ?? undefined, // Side-by-side video
         abortController.signal
       )
       if (!abortController.signal.aborted) {
@@ -253,7 +252,7 @@ function App() {
         previewAbortControllerRef.current = null
       }
     }
-  }, [store.mainFilePath, store.secondaryFilePath, store.secondaryWavPath, store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
+  }, [store.mainFilePath, store.secondaryWavPath, store.previewStartTimeMs, store.previewDurationSeconds, store.offsetMs, store.isMainAudioMuted, store.isSecondaryAudioMuted, api.isReady])
 
   const handleStopPreviewGeneration = useCallback(() => {
     previewAbortControllerRef.current?.abort()

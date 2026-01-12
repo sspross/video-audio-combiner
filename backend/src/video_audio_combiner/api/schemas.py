@@ -98,11 +98,7 @@ class MergeResponse(BaseModel):
 
 
 class PreviewRequest(BaseModel):
-    """Request to generate a preview clip.
-
-    If secondary_video_path is provided, generates a side-by-side composite
-    with the main video on the left and secondary on the right.
-    """
+    """Request to generate a preview clip."""
 
     video_path: str
     audio_path: str
@@ -111,7 +107,6 @@ class PreviewRequest(BaseModel):
     offset_ms: float
     mute_main_audio: bool = True
     mute_secondary_audio: bool = False
-    secondary_video_path: str | None = None
 
 
 class PreviewResponse(BaseModel):
@@ -122,17 +117,10 @@ class PreviewResponse(BaseModel):
 
 
 class FrameRequest(BaseModel):
-    """Request to extract a single frame from video.
-
-    If secondary_video_path is provided, generates a side-by-side composite
-    with the main video on the left and secondary on the right.
-    The secondary frame is extracted at time_seconds - offset_ms.
-    """
+    """Request to extract a single frame from video."""
 
     video_path: str
     time_seconds: float
-    secondary_video_path: str | None = None
-    offset_ms: float = 0.0
 
 
 class FrameResponse(BaseModel):

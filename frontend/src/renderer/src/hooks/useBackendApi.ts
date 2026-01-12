@@ -134,7 +134,6 @@ export function useBackendApi() {
       offsetMs: number,
       muteMainAudio: boolean = true,
       muteSecondaryAudio: boolean = false,
-      secondaryVideoPath?: string,
       signal?: AbortSignal
     ): Promise<PreviewResponse> => {
       if (!apiClient) throw new Error('Backend not ready')
@@ -147,8 +146,7 @@ export function useBackendApi() {
           duration_seconds: durationSeconds,
           offset_ms: offsetMs,
           mute_main_audio: muteMainAudio,
-          mute_secondary_audio: muteSecondaryAudio,
-          secondary_video_path: secondaryVideoPath
+          mute_secondary_audio: muteSecondaryAudio
         },
         { signal }
       )
@@ -158,18 +156,11 @@ export function useBackendApi() {
   )
 
   const extractFrame = useCallback(
-    async (
-      videoPath: string,
-      timeSeconds: number,
-      secondaryVideoPath?: string,
-      offsetMs?: number
-    ): Promise<FrameResponse> => {
+    async (videoPath: string, timeSeconds: number): Promise<FrameResponse> => {
       if (!apiClient) throw new Error('Backend not ready')
       const response = await apiClient.post('/extract/frame', {
         video_path: videoPath,
-        time_seconds: timeSeconds,
-        secondary_video_path: secondaryVideoPath,
-        offset_ms: offsetMs
+        time_seconds: timeSeconds
       })
       return response.data
     },

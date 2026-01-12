@@ -381,12 +381,8 @@ class FFmpegService:
         offset_ms: float,
         mute_main_audio: bool = True,
         mute_secondary_audio: bool = False,
-        secondary_video_path: str | None = None,
     ) -> PreviewResponse:
         """Generate a preview clip with combined audio.
-
-        If secondary_video_path is provided, generates a side-by-side composite
-        with main video on the left and secondary on the right.
 
         Args:
             video_path: Path to the original video file.
@@ -396,7 +392,6 @@ class FFmpegService:
             offset_ms: Audio offset in milliseconds.
             mute_main_audio: If True, mute the original video's audio.
             mute_secondary_audio: If True, mute the secondary audio.
-            secondary_video_path: Optional path to secondary video for side-by-side.
 
         Returns:
             PreviewResponse with path to the preview file.
@@ -409,144 +404,54 @@ class FFmpegService:
         if not audio.exists():
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
-        if secondary_video_path:
-            secondary_video = Path(secondary_video_path)
-            if not secondary_video.exists():
-                raise FileNotFoundError(f"Secondary video file not found: {secondary_video_path}")
-
         # Generate output path
         output_path = self.temp_dir / "preview.mp4"
 
         # Convert offset to seconds
         offset_seconds = offset_ms / 1000.0
 
-        # Calculate the audio/secondary video start time (accounting for offset)
+        # Calculate the audio start time (accounting for offset)
         # If offset is positive, audio starts later in the video timeline
         # So for the same video position, we need audio from an earlier point
-        secondary_start_time = start_time_seconds - offset_seconds
+        audio_start_time = start_time_seconds - offset_seconds
 
-        if secondary_video_path:
-            # Side-by-side video preview
-            cmd = [
-                "ffmpeg",
-                "-y",  # Overwrite output
-                "-hide_banner",  # Reduce noise in output
-                "-loglevel",
-                "error",  # Only show errors, not warnings
-                "-ss",
-                str(max(0, start_time_seconds)),  # Seek main video
-                "-i",
-                str(video),
-                "-ss",
-                str(max(0, secondary_start_time)),  # Seek secondary video
-                "-i",
-                str(secondary_video_path),
-                "-ss",
-                str(max(0, secondary_start_time)),  # Seek audio
-                "-i",
-                str(audio),
-                "-t",
-                str(duration_seconds),  # Duration
-            ]
+        cmd = [
+            "ffmpeg",
+            "-y",  # Overwrite output
+            "-ss",
+            str(max(0, start_time_seconds)),  # Seek in video
+            "-i",
+            str(video),
+            "-ss",
+            str(max(0, audio_start_time)),  # Seek in audio
+            "-i",
+            str(audio),
+            "-t",
+            str(duration_seconds),  # Duration
+            "-map",
+            "0:v:0",  # Video from first input
+        ]
 
-            # Build filter complex for side-by-side video
-            # Scale both videos to same height then stack horizontally
-            # Use -2 to ensure even dimensions (required by most codecs)
-            # Add format=yuv420p for libx264 compatibility
-            video_filter = (
-                "[0:v]scale=-2:720,format=yuv420p[left];"
-                "[1:v]scale=-2:720,format=yuv420p[right];"
-                "[left][right]hstack=inputs=2[vout]"
-            )
-
-            # Handle audio based on mute settings
-            if mute_main_audio and mute_secondary_audio:
-                # Both muted - no audio
-                cmd.extend(
-                    [
-                        "-filter_complex",
-                        video_filter,
-                        "-map",
-                        "[vout]",
-                        "-an",
-                    ]
-                )
-            elif mute_main_audio and not mute_secondary_audio:
-                # Only secondary audio
-                cmd.extend(
-                    [
-                        "-filter_complex",
-                        video_filter,
-                        "-map",
-                        "[vout]",
-                        "-map",
-                        "2:a:0",
-                    ]
-                )
-            elif not mute_main_audio and mute_secondary_audio:
-                # Only main audio
-                cmd.extend(
-                    [
-                        "-filter_complex",
-                        video_filter,
-                        "-map",
-                        "[vout]",
-                        "-map",
-                        "0:a:0",
-                    ]
-                )
-            else:
-                # Both audios - mix them together
-                full_filter = f"{video_filter};[0:a:0][2:a:0]amix=inputs=2:duration=first[aout]"
-                cmd.extend(
-                    [
-                        "-filter_complex",
-                        full_filter,
-                        "-map",
-                        "[vout]",
-                        "-map",
-                        "[aout]",
-                    ]
-                )
+        # Handle audio mapping based on mute settings
+        if mute_main_audio and mute_secondary_audio:
+            # Both muted - no audio
+            cmd.extend(["-an"])
+        elif mute_main_audio and not mute_secondary_audio:
+            # Only secondary audio (current default behavior)
+            cmd.extend(["-map", "1:a:0"])
+        elif not mute_main_audio and mute_secondary_audio:
+            # Only main audio
+            cmd.extend(["-map", "0:a:0"])
         else:
-            # Single video preview (original behavior)
-            cmd = [
-                "ffmpeg",
-                "-y",  # Overwrite output
-                "-ss",
-                str(max(0, start_time_seconds)),  # Seek in video
-                "-i",
-                str(video),
-                "-ss",
-                str(max(0, secondary_start_time)),  # Seek in audio
-                "-i",
-                str(audio),
-                "-t",
-                str(duration_seconds),  # Duration
-                "-map",
-                "0:v:0",  # Video from first input
-            ]
-
-            # Handle audio mapping based on mute settings
-            if mute_main_audio and mute_secondary_audio:
-                # Both muted - no audio
-                cmd.extend(["-an"])
-            elif mute_main_audio and not mute_secondary_audio:
-                # Only secondary audio (current default behavior)
-                cmd.extend(["-map", "1:a:0"])
-            elif not mute_main_audio and mute_secondary_audio:
-                # Only main audio
-                cmd.extend(["-map", "0:a:0"])
-            else:
-                # Both audios - mix them together
-                cmd.extend(
-                    [
-                        "-filter_complex",
-                        "[0:a:0][1:a:0]amix=inputs=2:duration=first[aout]",
-                        "-map",
-                        "[aout]",
-                    ]
-                )
+            # Both audios - mix them together
+            cmd.extend(
+                [
+                    "-filter_complex",
+                    "[0:a:0][1:a:0]amix=inputs=2:duration=first[aout]",
+                    "-map",
+                    "[aout]",
+                ]
+            )
 
         # Video encoding settings
         cmd.extend(
@@ -608,7 +513,7 @@ class FFmpegService:
                 error_msg = "; ".join(error_lines[-3:])  # Last 3 error lines
             else:
                 # Fallback: last 3 non-empty lines
-                lines = [l.strip() for l in stderr.split("\n") if l.strip()]
+                lines = [line.strip() for line in stderr.split("\n") if line.strip()]
                 error_msg = "; ".join(lines[-3:]) if lines else "Unknown FFmpeg error"
 
             raise ValueError(f"FFmpeg preview generation failed: {error_msg}")
@@ -622,19 +527,12 @@ class FFmpegService:
         self,
         video_path: str,
         time_seconds: float,
-        secondary_video_path: str | None = None,
-        offset_ms: float = 0.0,
     ) -> FrameResponse:
         """Extract a single frame from video at the specified time.
 
-        If secondary_video_path is provided, generates a side-by-side composite
-        with main video on the left and secondary on the right.
-
         Args:
-            video_path: Path to the main video file.
-            time_seconds: Time position in seconds for the main video.
-            secondary_video_path: Optional path to secondary video for side-by-side.
-            offset_ms: Offset in milliseconds for the secondary video.
+            video_path: Path to the video file.
+            time_seconds: Time position in seconds.
 
         Returns:
             FrameResponse with path to the extracted frame image.
@@ -643,73 +541,34 @@ class FFmpegService:
             FileNotFoundError: If the video file doesn't exist.
             ValueError: If frame extraction fails.
         """
+        import hashlib
+
         video = Path(video_path)
         if not video.exists():
             raise FileNotFoundError(f"Video file not found: {video_path}")
 
-        if secondary_video_path:
-            secondary_video = Path(secondary_video_path)
-            if not secondary_video.exists():
-                raise FileNotFoundError(f"Secondary video file not found: {secondary_video_path}")
-
         # Generate output path with timestamp to allow caching
         # Use a hash of path + time to create unique filename
-        import hashlib
-
-        if secondary_video_path:
-            # Include secondary path and offset in hash for side-by-side frames
-            hash_input = f"{video_path}:{time_seconds}:{secondary_video_path}:{offset_ms}"
-            path_hash = hashlib.md5(hash_input.encode()).hexdigest()[:12]
-            output_path = self.temp_dir / f"frame_sbs_{path_hash}.jpg"
-        else:
-            path_hash = hashlib.md5(f"{video_path}:{time_seconds}".encode()).hexdigest()[:12]
-            output_path = self.temp_dir / f"frame_{path_hash}.jpg"
+        path_hash = hashlib.md5(f"{video_path}:{time_seconds}".encode()).hexdigest()[:12]
+        output_path = self.temp_dir / f"frame_{path_hash}.jpg"
 
         # If frame already exists, return it (caching)
         if output_path.exists():
             return FrameResponse(frame_path=str(output_path), time_seconds=time_seconds)
 
-        if secondary_video_path:
-            # Side-by-side composite frame extraction
-            secondary_time_seconds = time_seconds - (offset_ms / 1000.0)
-
-            # Build FFmpeg command with hstack filter
-            cmd = [
-                "ffmpeg",
-                "-y",  # Overwrite output
-                "-ss",
-                str(max(0, time_seconds)),  # Seek main video
-                "-i",
-                str(video),
-                "-ss",
-                str(max(0, secondary_time_seconds)),  # Seek secondary video
-                "-i",
-                str(secondary_video_path),
-                "-filter_complex",
-                # Scale both to same height, then stack horizontally
-                # Use -2 to ensure even dimensions (required by most codecs)
-                "[0:v]scale=-2:720[left];[1:v]scale=-2:720[right];[left][right]hstack=inputs=2",
-                "-frames:v",
-                "1",  # Extract only one frame
-                "-q:v",
-                "2",  # High quality JPEG
-                str(output_path),
-            ]
-        else:
-            # Single frame extraction (original behavior)
-            cmd = [
-                "ffmpeg",
-                "-y",  # Overwrite output
-                "-ss",
-                str(max(0, time_seconds)),  # Seek to position
-                "-i",
-                str(video),
-                "-vframes",
-                "1",  # Extract only one frame
-                "-q:v",
-                "2",  # High quality JPEG (1-31, lower is better)
-                str(output_path),
-            ]
+        cmd = [
+            "ffmpeg",
+            "-y",  # Overwrite output
+            "-ss",
+            str(max(0, time_seconds)),  # Seek to position
+            "-i",
+            str(video),
+            "-vframes",
+            "1",  # Extract only one frame
+            "-q:v",
+            "2",  # High quality JPEG (1-31, lower is better)
+            str(output_path),
+        ]
 
         try:
             subprocess.run(cmd, capture_output=True, text=True, check=True)

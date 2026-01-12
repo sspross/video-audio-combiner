@@ -13,12 +13,7 @@ interface PreviewPanelProps {
   onPreviewRequest: () => void
   onPreviewEnded: () => void
   onStopGeneration?: () => void
-  extractFrame: (
-    videoPath: string,
-    timeSeconds: number,
-    secondaryVideoPath?: string,
-    offsetMs?: number
-  ) => Promise<FrameResponse>
+  extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
   offsetMs: number
   onAutoDetect: () => void
   isAutoDetecting: boolean
@@ -122,8 +117,6 @@ export function PreviewPanel({
             onPreviewEnded={handlePreviewEnded}
             onPlayingChange={handlePlayingChange}
             extractFrame={extractFrame}
-            secondaryVideoPath={store.secondaryFilePath}
-            offsetMs={offsetMs}
           />
         ) : (
           <div className={styles.placeholder}>
