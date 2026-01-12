@@ -1,8 +1,9 @@
-import { spawn, ChildProcess } from 'child_process'
+import { spawn, ChildProcess, execSync } from 'child_process'
 import { join } from 'path'
-import { app } from 'electron'
+import { app, dialog } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { net } from 'electron'
+import { existsSync } from 'fs'
 
 export class PythonBackend {
   private process: ChildProcess | null = null
@@ -18,12 +19,33 @@ export class PythonBackend {
       return
     }
 
-    return new Promise((resolve, reject) => {
-      const backendPath = this.getBackendPath()
+    const backendPath = this.getBackendPath()
 
-      // Use uv run in development, direct python in production
+    // In production, ensure Python is available and venv is set up
+    if (!is.dev) {
+      const pythonAvailable = await this.checkPythonAvailable()
+      if (!pythonAvailable) {
+        await dialog.showErrorBox(
+          'Python Required',
+          'Video Audio Combiner requires Python 3.11 or later.\n\n' +
+            'Please install Python from:\n' +
+            '- macOS: brew install python@3.11\n' +
+            '- Or download from python.org\n\n' +
+            'Then restart the application.'
+        )
+        app.quit()
+        return
+      }
+
+      // Set up virtual environment on first run
+      await this.ensureVenvSetup(backendPath)
+    }
+
+    return new Promise((resolve, reject) => {
+      // Use uv run in development, venv python in production
       let command: string
       let args: string[]
+      let env = { ...process.env }
 
       if (is.dev) {
         command = 'uv'
@@ -37,8 +59,9 @@ export class PythonBackend {
           this.port.toString()
         ]
       } else {
-        // In production, use bundled Python or system Python
-        command = 'python'
+        // In production, use the virtual environment
+        const venvPython = join(backendPath, '.venv', 'bin', 'python')
+        command = venvPython
         args = [
           '-m',
           'uvicorn',
@@ -48,11 +71,14 @@ export class PythonBackend {
           '--port',
           this.port.toString()
         ]
+        // Add src directory to PYTHONPATH for imports
+        env.PYTHONPATH = join(backendPath, 'src')
       }
 
       this.process = spawn(command, args, {
         cwd: backendPath,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env
       })
 
       this.process.stdout?.on('data', (data: Buffer) => {
@@ -108,6 +134,55 @@ export class PythonBackend {
     })
   }
 
+  private async checkPythonAvailable(): Promise<boolean> {
+    const pythonCommands = ['python3', 'python']
+    for (const cmd of pythonCommands) {
+      try {
+        const version = execSync(`${cmd} --version`, { encoding: 'utf-8' })
+        const match = version.match(/Python (\d+)\.(\d+)/)
+        if (match) {
+          const major = parseInt(match[1])
+          const minor = parseInt(match[2])
+          if (major >= 3 && minor >= 11) {
+            console.log(`Found Python: ${version.trim()}`)
+            return true
+          }
+        }
+      } catch {
+        // Command not found, try next
+      }
+    }
+    return false
+  }
+
+  private async ensureVenvSetup(backendPath: string): Promise<void> {
+    const venvPath = join(backendPath, '.venv')
+    const requirementsPath = join(backendPath, 'requirements.txt')
+
+    if (existsSync(venvPath)) {
+      console.log('Virtual environment already exists')
+      return
+    }
+
+    console.log('Setting up virtual environment for first run...')
+
+    try {
+      // Create virtual environment
+      execSync('python3 -m venv .venv', { cwd: backendPath, stdio: 'inherit' })
+
+      // Install dependencies
+      if (existsSync(requirementsPath)) {
+        const pipPath = join(venvPath, 'bin', 'pip')
+        execSync(`${pipPath} install -r requirements.txt`, { cwd: backendPath, stdio: 'inherit' })
+      }
+
+      console.log('Virtual environment setup complete')
+    } catch (error) {
+      console.error('Failed to set up virtual environment:', error)
+      throw error
+    }
+  }
+
   private async checkHealth(): Promise<boolean> {
     return new Promise((resolve) => {
       const request = net.request({
@@ -151,8 +226,8 @@ export class PythonBackend {
       // Development: backend is in the parent directory
       return join(app.getAppPath(), '..', 'backend')
     } else {
-      // Production: backend is bundled with the app
-      return join(app.getAppPath(), 'backend')
+      // Production: backend is bundled in app resources
+      return join(process.resourcesPath, 'backend')
     }
   }
 }

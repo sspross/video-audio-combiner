@@ -3,12 +3,84 @@
   "version": "0.1.0",
   "description": "Desktop tool to merge audio tracks from different video sources",
   "main": "./out/main/index.js",
+  "author": {
+    "name": "Video Audio Combiner",
+    "email": "contact@example.com"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "package": "electron-builder",
+    "package:mac": "electron-builder --mac",
+    "package:mac:arm64": "electron-builder --mac --arm64",
+    "package:mac:x64": "electron-builder --mac --x64"
+  },
+  "build": {
+    "appId": "com.video-audio-combiner",
+    "productName": "Video Audio Combiner",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend",
+        "to": "backend",
+        "filter": [
+          "src/**/*",
+          "pyproject.toml",
+          "requirements.txt",
+          "!**/__pycache__/**",
+          "!**/.venv/**",
+          "!**/tests/**",
+          "!**/.pytest_cache/**",
+          "!**/*.pyc"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "afterSign": "scripts/notarize.js"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^3.0.0",
@@ -19,6 +91,7 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
