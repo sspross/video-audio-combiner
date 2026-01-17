@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Volume2, VolumeX, FolderOpen, Grid3X3 } from 'lucide-react'
 import { WaveformTrack } from './WaveformTrack'
 import { TimelineCursor } from './TimelineCursor'
+import { PlayheadCursor } from './PlayheadCursor'
 import { PreviewRangeSelector } from './PreviewRangeSelector'
 import { WizardFooter, WizardButton } from './wizard'
 import { useProjectStore } from '../stores/projectStore'
@@ -153,9 +154,10 @@ function TrackHeader({
 
 interface AlignmentEditorProps {
   canContinue: boolean
+  playbackPositionMs?: number | null
 }
 
-export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
+export function AlignmentEditor({ canContinue, playbackPositionMs }: AlignmentEditorProps) {
   const store = useProjectStore()
   const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(false)
@@ -550,6 +552,15 @@ export function AlignmentEditor({ canContinue }: AlignmentEditorProps) {
                   pixelsPerSecond={pixelsPerSecond}
                   baseOffset={scrollPaddingPx + mainStartOffset}
                 />
+
+                {/* Playhead Cursor - visible during video playback */}
+                {playbackPositionMs != null && (
+                  <PlayheadCursor
+                    positionMs={playbackPositionMs}
+                    pixelsPerSecond={pixelsPerSecond}
+                    baseOffset={scrollPaddingPx + mainStartOffset}
+                  />
+                )}
 
                 {/* Timeline Ruler */}
                 <TimelineRuler
