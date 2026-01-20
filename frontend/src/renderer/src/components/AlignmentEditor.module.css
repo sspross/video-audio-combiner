@@ -149,12 +149,19 @@
 .stretchedBadge {
   font-size: 10px;
   font-family: var(--font-mono);
-  color: #f59e0b;
-  background-color: rgba(245, 158, 11, 0.15);
+  color: #e94560;
+  background-color: rgba(233, 69, 96, 0.15);
   padding: 1px 4px;
   border-radius: var(--radius-xs);
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
 }
 
 .muteButton {

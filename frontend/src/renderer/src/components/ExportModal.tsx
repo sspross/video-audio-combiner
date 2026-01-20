@@ -277,10 +277,20 @@ export function ExportModal({ onRequestSavePath }: ExportModalProps) {
                       <span>{trackChannels}</span>
                       <span className={styles.infoDot}>•</span>
                       <span>{trackDuration}</span>
-                      <span className={styles.infoDot}>•</span>
-                      <span className={styles.offsetValue}>{formatOffset(store.offsetMs)}</span>
                     </div>
                   </div>
+                  <div className={styles.trackModificationsRow}>
+                    <span className={styles.modificationLabel}>Sync Offset</span>
+                    <span className={styles.offsetValue}>{formatOffset(store.offsetMs)}</span>
+                  </div>
+                  {store.secondaryAudioStretched && store.secondaryTempoRatio && (
+                    <div className={styles.trackModificationsRow}>
+                      <span className={styles.modificationLabel}>Speed Adjustment</span>
+                      <span className={styles.stretchValue}>
+                        {store.secondaryTempoRatio > 1 ? '+' : '-'}{Math.abs((1 - 1 / store.secondaryTempoRatio) * 100).toFixed(2)}%
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

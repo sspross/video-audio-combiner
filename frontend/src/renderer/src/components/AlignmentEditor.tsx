@@ -115,21 +115,22 @@ function TrackHeader({
               <span className={styles.fileName} title={details}>
                 {details}
               </span>
-              {/* Framerate badge */}
-              {framerate && (
-                <span className={styles.framerateBadge} title={`Video framerate: ${framerate.toFixed(3)} fps`}>
-                  {formatFramerate(framerate)} fps
-                </span>
-              )}
-              {/* Stretched indicator */}
-              {isStretched && stretchPercent && (
-                <span
-                  className={styles.stretchedBadge}
-                  title={`Audio stretched by ${stretchPercent}% to match main video framerate`}
-                >
-                  ↔ {stretchPercent}%
-                </span>
-              )}
+              {/* Badges row: framerate and stretch on same line */}
+              <div className={styles.badgeRow}>
+                {framerate && (
+                  <span className={styles.framerateBadge} title={`Video framerate: ${framerate.toFixed(3)} fps`}>
+                    {formatFramerate(framerate)} fps
+                  </span>
+                )}
+                {isStretched && stretchPercent && (
+                  <span
+                    className={styles.stretchedBadge}
+                    title={`Audio stretched by ${stretchPercent}% to match main video framerate`}
+                  >
+                    ↔ {stretchPercent}%
+                  </span>
+                )}
+              </div>
             </>
           ) : (
             <>
