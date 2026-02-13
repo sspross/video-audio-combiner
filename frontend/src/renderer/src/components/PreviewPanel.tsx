@@ -17,6 +17,7 @@ interface PreviewPanelProps {
   offsetMs: number
   onAutoDetect: () => void
   isAutoDetecting: boolean
+  onPlaybackTimeUpdate?: (absoluteTimeMs: number | null) => void
 }
 
 function formatTimeShort(ms: number): string {
@@ -36,7 +37,8 @@ export function PreviewPanel({
   extractFrame,
   offsetMs,
   onAutoDetect,
-  isAutoDetecting
+  isAutoDetecting,
+  onPlaybackTimeUpdate
 }: PreviewPanelProps) {
   const store = useProjectStore()
   const hasWaveforms = store.mainPeaks.length > 0 && store.secondaryPeaks.length > 0
@@ -46,6 +48,12 @@ export function PreviewPanel({
   const handlePlayingChange = useCallback((playing: boolean) => {
     setIsPlaying(playing)
   }, [])
+
+  const handleTimeUpdate = useCallback((currentTimeMs: number) => {
+    // Convert preview-relative time to absolute timeline time
+    const absoluteTimeMs = store.previewStartTimeMs + currentTimeMs
+    onPlaybackTimeUpdate?.(absoluteTimeMs)
+  }, [store.previewStartTimeMs, onPlaybackTimeUpdate])
 
   const handlePlayPauseClick = useCallback(() => {
     if (isGeneratingPreview) {
@@ -116,6 +124,7 @@ export function PreviewPanel({
             isGeneratingPreview={isGeneratingPreview}
             onPreviewEnded={handlePreviewEnded}
             onPlayingChange={handlePlayingChange}
+            onTimeUpdate={handleTimeUpdate}
             extractFrame={extractFrame}
           />
         ) : (

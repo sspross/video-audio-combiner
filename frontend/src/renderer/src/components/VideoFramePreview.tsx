@@ -11,6 +11,7 @@ interface VideoFramePreviewProps {
   isGeneratingPreview: boolean
   onPreviewEnded?: () => void
   onPlayingChange?: (isPlaying: boolean) => void
+  onTimeUpdate?: (currentTimeMs: number) => void
   extractFrame: (videoPath: string, timeSeconds: number) => Promise<FrameResponse>
 }
 
@@ -32,6 +33,7 @@ export const VideoFramePreview = forwardRef<VideoFramePreviewHandle, VideoFrameP
       isGeneratingPreview,
       onPreviewEnded,
       onPlayingChange,
+      onTimeUpdate,
       extractFrame
     },
     ref
@@ -194,6 +196,9 @@ export const VideoFramePreview = forwardRef<VideoFramePreviewHandle, VideoFrameP
             onPause={() => {
               setIsPlaying(false)
               onPlayingChange?.(false)
+            }}
+            onTimeUpdate={(e) => {
+              onTimeUpdate?.((e.target as HTMLVideoElement).currentTime * 1000)
             }}
             onEnded={handlePreviewEnded}
             onError={() => {
